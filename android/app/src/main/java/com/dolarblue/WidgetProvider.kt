@@ -1,8 +1,10 @@
 package com.dolarblue
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent   
 import android.widget.RemoteViews
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,35 +29,44 @@ class WidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_layout)
+        // Handle Refresh Button Click
+        val intent = Intent(context, WidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            appWidgetId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        remoteViews.setOnClickPendingIntent(R.id.refresh_button, pendingIntent)
     
         // Fetch data using Coroutine
         CoroutineScope(Dispatchers.IO).launch {
             val data = fetchDolarData()
     
-            // Extract Dólar Blue and Dólar Cripto
             val dolarBlue = data["Dólar blue"]
             val dolarCripto = data["Dólar cripto"]
     
             withContext(Dispatchers.Main) {
-                // Update Dólar Blue
                 dolarBlue?.let {
-                    remoteViews.setTextViewText(R.id.blue_compra, "${it.first}")
-                    remoteViews.setTextViewText(R.id.blue_venta, "${it.second}")
-                    remoteViews.setTextViewText(R.id.blue_porcentaje, "${it.third}")
+                    remoteViews.setTextViewText(R.id.blue_compra, it.first)
+                    remoteViews.setTextViewText(R.id.blue_venta, it.second)
+                    remoteViews.setTextViewText(R.id.blue_porcentaje, it.third)
                 }
     
-                // Update Dólar Cripto
                 dolarCripto?.let {
-                    remoteViews.setTextViewText(R.id.cripto_compra, "${it.first}")
-                    remoteViews.setTextViewText(R.id.cripto_venta, "${it.second}")
-                    remoteViews.setTextViewText(R.id.cripto_porcentaje, "${it.third}")
+                    remoteViews.setTextViewText(R.id.cripto_compra, it.first)
+                    remoteViews.setTextViewText(R.id.cripto_venta, it.second)
+                    remoteViews.setTextViewText(R.id.cripto_porcentaje, it.third)
                 }
     
-                // Apply updates to widget
                 appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
             }
         }
     }
+    
 
 
     private suspend fun fetchDolarData(): Map<String, Triple<String, String, String>> {
