@@ -4,11 +4,10 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
-import android.widget.RemoteViews
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.dolarblue.WidgetProvider
 
 class WidgetModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -18,17 +17,12 @@ class WidgetModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun updateWidget(text: String) {
+    fun updateWidget(data: String) {
         val context: Context = reactApplicationContext
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val componentName = ComponentName(context, WidgetProvider::class.java)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-        for (appWidgetId in appWidgetIds) {
-            val views = RemoteViews(context.packageName, R.layout.widget_layout)
-            views.setTextViewText(R.id.widget_text, text)
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+        val intent = Intent(context, WidgetProvider::class.java).apply {
+            action = WidgetProvider.ACTION_UPDATE_WIDGET
+            putExtra(WidgetProvider.EXTRA_WIDGET_TEXT, data)
         }
+        context.sendBroadcast(intent)
     }
 }

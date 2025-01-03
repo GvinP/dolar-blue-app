@@ -17,6 +17,7 @@ const App = () => {
       const blob = await response.blob();
       const text = await new Response(blob).text();
       const extractedCotizaciones = extractCotizaciones(text);
+      console.log(extractedCotizaciones);
       setCotizaciones(extractedCotizaciones);
     } catch (error) {
       console.error('fetch error', error);
@@ -51,10 +52,15 @@ const App = () => {
             </View>
           ))}
       </ScrollView>
-      {/* <Button
+      <Button
         title="Update Widget first Button"
-        onPress={() => updateWidget('update from first button')}
-      /> */}
+        onPress={() =>
+          updateWidget(
+            cotizaciones.find(cotizacion => cotizacion.title === 'Dólar cripto')
+              ?.compra || 'no data',
+          )
+        }
+      />
       <View style={{marginTop: 20}}>
         <Button title="Button" onPress={fetchDolar} />
       </View>
