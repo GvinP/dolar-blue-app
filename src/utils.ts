@@ -1,7 +1,6 @@
 import {parseDocument} from 'htmlparser2';
 import {findAll, findOne, textContent} from 'domutils';
 
-// Define the data structure for extracted information
 export interface Cotizacion {
   title: string;
   compra?: string;
@@ -9,27 +8,21 @@ export interface Cotizacion {
   porcentaje?: string;
 }
 
-// Sample HTML input (replace this with your dynamic HTML source)
-// const html = `
-// <div class="tile is-child">
-//   <a class="title">Dólar blue</a>
-//   <div class="values">
-//     <div class="compra"><div class="val">$1195</div></div>
-//     <div class="venta"><div class="val">$1215</div></div>
-//     <div class="var-porcentaje"><div>0.00%</div></div>
-//   </div>
-// </div>
-// <div class="tile is-child">
-//   <a class="title">Dólar Oficial</a>
-//   <div class="values">
-//     <div class="compra"><div class="val">$1012,50</div></div>
-//     <div class="venta"><div class="val">$1052,50</div></div>
-//     <div class="var-porcentaje"><div>0.00%</div></div>
-//   </div>
-// </div>
-// `;
+export const fetchDolar = async () => {
+  try {
+    const response = await fetch(`https://www.dolarhoy.com?${new Date()}`);
+    const blob = await response.blob();
+    const text = await new Response(blob).text();
+    const extractedCotizaciones = extractCotizaciones(text);
 
-// Function to extract cotizaciones
+    return removeDuplicates(extractedCotizaciones).filter(
+      cotizacion => cotizacion.title !== 'Won',
+    );
+  } catch (error) {
+    console.error('fetch error', error);
+  }
+};
+
 export const extractCotizaciones = (html: string): Cotizacion[] => {
   const doc = parseDocument(html);
 
@@ -100,51 +93,3 @@ export const removeDuplicates = (arr: Cotizacion[]): Cotizacion[] => {
     return true; // Not a duplicate, so keep it
   });
 };
-
-// Execute the function and log results
-// const cotizaciones = extractCotizaciones(html);
-// console.log(cotizaciones);
-
-// import {parseDocument} from 'htmlparser2';
-// import {findOne, findAll, textContent} from 'domutils';
-
-// // Replace this with your HTML source
-// const html = `
-// <div class="tile is-child">
-//   <a class="title">Dólar blue</a>
-//   <div class="values">
-//     <div class="compra"><div class="val">$1195</div></div>
-//     <div class="venta"><div class="val">$1215</div></div>
-//     <div class="var-porcentaje"><div>0.00%</div></div>
-//   </div>
-// </div>
-// `;
-
-// const extractData = html => {
-//   const doc = parseDocument(html);
-
-//   const tiles = findAll(
-//     el => el.attribs && el.attribs.class?.includes('tile is-child'),
-//     doc,
-//   );
-//   const data = tiles.map(tile => {
-//     const title = textContent(
-//       findOne(el => el.attribs && el.attribs.class === 'title', tile),
-//     );
-//     const compra = textContent(
-//       findOne(el => el.attribs && el.attribs.class === 'val', tile),
-//     );
-//     const venta = textContent(
-//       findAll(el => el.attribs && el.attribs.class === 'val', tile)[1],
-//     );
-//     const porcentaje = textContent(
-//       findOne(el => el.attribs && el.attribs.class === 'var-porcentaje', tile),
-//     );
-
-//     return {title, compra, venta, porcentaje};
-//   });
-
-//   return data;
-// };
-
-// console.log(extractData(html));
