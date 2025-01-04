@@ -29,18 +29,27 @@ class WidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_layout)
-        // Handle Refresh Button Click
-        val intent = Intent(context, WidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            appWidgetId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        remoteViews.setOnClickPendingIntent(R.id.refresh_button, pendingIntent)
+        val intent = Intent(context, MainActivity::class.java)
+    val pendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    remoteViews.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+
+    // Refresh button logic
+    val refreshIntent = Intent(context, WidgetProvider::class.java).apply {
+        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+    }
+    val refreshPendingIntent = PendingIntent.getBroadcast(
+        context,
+        appWidgetId,
+        refreshIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    remoteViews.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent)
     
         // Fetch data using Coroutine
         CoroutineScope(Dispatchers.IO).launch {
