@@ -1,4 +1,4 @@
 export type RootStackParamList = {
   HomeScreen: undefined;
-  ChartScreen: undefined;
+  ChartScreen: {title: string};
 };
