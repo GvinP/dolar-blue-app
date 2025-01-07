@@ -2,15 +2,14 @@ import {
   Text,
   View,
   StyleSheet,
-  ScrollView,
   Pressable,
-  ActivityIndicator,
+  RefreshControl,
+  FlatList,
 } from 'react-native';
-import {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {RefreshIcon} from './icons';
 import {Cotizacion, fetchDolar} from './utils';
 
 export const HomeScreen = () => {
@@ -19,64 +18,50 @@ export const HomeScreen = () => {
   const [prices, setPrices] = useState<Cotizacion[] | undefined>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const headerRight = useCallback(
-    () => (
-      <View style={styles.refreshButton}>
-        {isLoading ? (
-          <ActivityIndicator color="#fff" size={'large'} />
-        ) : (
-          <Pressable
-            onPress={() => {
-              fetchPrices();
-            }}>
-            <RefreshIcon />
-          </Pressable>
-        )}
-      </View>
-    ),
-    [isLoading],
-  );
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight,
-    });
-  }, [navigation, headerRight]);
-
-  useEffect(() => {
-    fetchPrices();
-  }, []);
-
-  const fetchPrices = async () => {
+  const fetchPrices = useCallback(async () => {
     try {
-      setIsLoading(true);
       const response = await fetchDolar();
       setPrices(response);
     } catch (error) {
       console.error('Error fetching prices:', error);
+    }
+  }, []);
+
+  const refreshPrices = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      await fetchPrices();
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchPrices]);
 
-  return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {prices?.map((item, index) => (
-          <Pressable
-            key={index}
-            style={styles.moneda}
-            onPress={() => navigation.navigate('ChartScreen')}>
+  useEffect(() => {
+    fetchPrices();
+  }, [fetchPrices]);
+
+  const porcentajeColor = useCallback(
+    (porcentaje?: string) =>
+      porcentaje?.startsWith('-') ? '#af2030' : '#00ff83',
+    [],
+  );
+
+  const renderItem = useCallback(
+    ({item}: {item: Cotizacion}) => {
+      return (
+        <Pressable
+          onPress={() =>
+            navigation.navigate('ChartScreen', {
+              title: item.title,
+            })
+          }>
+          <View style={styles.moneda}>
             <View style={styles.row}>
               <Text style={styles.text}>{item.title}</Text>
               <Text
                 style={[
                   styles.porcentaje,
-                  {
-                    color: item.porcentaje?.startsWith('-')
-                      ? '#af2030'
-                      : '#00ff83',
-                  },
+                  {color: porcentajeColor(item.porcentaje)},
                 ]}>
                 {item.porcentaje}
               </Text>
@@ -89,9 +74,24 @@ export const HomeScreen = () => {
                 <Text style={styles.text}>{item.venta}</Text>
               </View>
             </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+          </View>
+        </Pressable>
+      );
+    },
+    [navigation, porcentajeColor],
+  );
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={prices}
+        renderItem={renderItem}
+        keyExtractor={item => item.title}
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refreshPrices} />
+        }
+      />
     </View>
   );
 };
@@ -107,13 +107,6 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-  },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
-    padding: 8,
-    marginBottom: 8,
   },
   moneda: {
     padding: 8,
