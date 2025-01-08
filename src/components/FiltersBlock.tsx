@@ -8,7 +8,7 @@ export const filters: {name: string; type: Filter; value?: number}[] = [
   {name: '3 Meses', type: '3meses', value: 90},
   {name: '6 Meses', type: '6meses', value: 180},
   {name: 'Año', type: 'año', value: 365},
-  // { name: 'Todo', type: 'todo'},
+  // {name: 'Todo',  type: 'todo', value: 365 * 3},
 ];
 export type Filter = 'semana' | 'mes' | '3meses' | '6meses' | 'año' | 'todo';
 
