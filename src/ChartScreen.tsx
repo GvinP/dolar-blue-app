@@ -1,39 +1,92 @@
+import {RouteProp, useRoute} from '@react-navigation/native';
 import {filters, FiltersBlock, FilterType, PointerLabel} from './components';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {LineChart, lineDataItem} from 'react-native-gifted-charts';
+import {RootStackParamList} from './types';
 
 type Price = {
-  date: string;
-  source: 'Oficial' | 'Blue';
-  value_sell: number;
-  value_buy: number;
-  // casa: string;
-  // compra: number;
-  // venta: number;
-  // fecha: string;
+  // date: string;
+  // source: 'Oficial' | 'Blue';
+  // value_sell: number;
+  // value_buy: number;
+  casa: string;
+  compra: number;
+  venta: number;
+  fecha: string;
+};
+
+const convertTitle = (title: string) => {
+  switch (title) {
+    case 'Dólar oficial':
+      return 'oficial';
+    case 'Dólar blue':
+      return 'blue';
+    case 'Dólar MEP/Bolsa':
+      return 'bolsa';
+    case 'Contado con liqui':
+      return 'contadoconliqui';
+    case 'Dólar cripto':
+      return 'cripto';
+    default:
+      return 'oficial';
+  }
 };
 
 export const ChartScreen = () => {
   const [prices, setPrices] = useState<Price[]>([]);
+  const [filteredPrices, setFilteredPrices] = useState<Price[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('semana');
+  const {
+    params: {title},
+  } = useRoute<RouteProp<RootStackParamList, 'ChartScreen'>>();
 
-  useEffect(() => {
-    fetchPrices();
-  }, []);
-
-  const fetchPrices = async () => {
+  const fetchPrices = useCallback(async () => {
     try {
       const response = await fetch(
-        // 'https://api.argentinadatos.com/v1/cotizaciones/dolares'
-        'https://api.bluelytics.com.ar/v2/evolution.json',
+        `https://api.argentinadatos.com/v1/cotizaciones/dolares/${convertTitle(
+          title,
+        )}`,
+        // 'https://api.bluelytics.com.ar/v2/evolution.json',
       );
       const priceData = await response.json();
-      setPrices(priceData.slice(0, 730).reverse());
+      setPrices(priceData.slice(-365));
     } catch (error) {
       console.error('Failed to fetch prices:', error);
     }
-  };
+  }, [title]);
+
+  useEffect(() => {
+    fetchPrices();
+  }, [fetchPrices]);
+
+  useEffect(() => {
+    setFilteredPrices(
+      prices.slice(
+        -(
+          filters[filters.findIndex(item => item.type === selectedFilter)]
+            .value || prices.length
+        ),
+      ),
+    );
+  }, [selectedFilter, prices]);
+
+  const pointerLabelComponent = useCallback((items: lineDataItem[]) => {
+    return <PointerLabel items={items[0]} />;
+  }, []);
+
+  const data = useMemo<lineDataItem[]>(
+    () =>
+      filteredPrices.map<lineDataItem>(item => ({
+        value: item.compra,
+        // TODO: Fix labels to show date
+        // label: new Date(item.fecha).toLocaleDateString('es-AR'),
+        dataPointText: new Date(item.fecha).toLocaleDateString('es-AR'),
+        labelTextStyle: {color: 'white', fontSize: 8},
+      })),
+    [filteredPrices],
+  );
+
   return (
     <View style={styles.container}>
       <FiltersBlock
@@ -42,83 +95,40 @@ export const ChartScreen = () => {
       />
       <View style={{alignItems: 'center'}}>
         <LineChart
-          data={prices
-            .filter(item => item.source === 'Blue')
-            .slice(
-              -(
-                filters[filters.findIndex(item => item.type === selectedFilter)]
-                  .value || prices.length
-              ),
-            )
-            .map(item => ({
-              value: item.value_buy,
-              label: item.date,
-              labelTextStyle: {color: 'white', fontSize: 8, marginLeft: 6},
-            }))}
-          // .filter((item) => item.casa === casa)
-          // .slice(
-          //   -(
-          //     filters[
-          //       filters.findIndex((item) => item.type === selectedFilter)
-          //     ].value || prices.length
-          //   )
-          // )
-          // .map((item, index) => ({
-          //   value: item.compra,
-          //   label: new Date(item.fecha).toLocaleDateString('es-AR'),
-          //   labelTextStyle: { color: 'white', fontSize: 8, marginLeft: 6 },
-          // }))}
-          data2={prices
-            .filter(item => item.source === 'Oficial')
-            .slice(
-              -(
-                filters[filters.findIndex(item => item.type === selectedFilter)]
-                  .value || prices.length
-              ),
-            )
-            .map(item => ({
-              value: item.value_buy,
-              label: item.date,
-              labelTextStyle: {color: 'white', fontSize: 8, marginLeft: 6},
-            }))}
-          // .filter((item) => item.casa === 'blue')
-          // .slice(
-          //   -(
-          //     filters[
-          //       filters.findIndex((item) => item.type === selectedFilter)
-          //     ].value || prices.length
-          //   )
-          // )
-          // .map((item, index) => ({
-          //   value: item.compra,
-          //   label: new Date(item.fecha).toLocaleDateString('es-AR'),
-          //   labelTextStyle: { color: 'white', fontSize: 8, marginLeft: 6 },
-          // }))}
-          width={320}
+          data={data}
+          labelsExtraHeight={10}
+          width={330}
           height={300}
           hideDataPoints
           spacing={
-            320 /
-            (filters[filters.findIndex(item => item.type === selectedFilter)]
-              .value || prices.length)
+            330 /
+            ((filters[filters.findIndex(item => item.type === selectedFilter)]
+              .value || prices.length) -
+              1)
           }
-          color="#af2030"
-          color2="#00ff83"
+          color="#00ff83"
           thickness={2}
-          // startFillColor="rgba(20,105,81,0.3)"
-          // endFillColor="rgba(20,85,81,0.01)"
           startOpacity={0.9}
           endOpacity={0.2}
           initialSpacing={0}
           noOfSections={6}
-          maxValue={1800}
+          maxValue={
+            (Math.max(...data.map(item => item.value || 0)) -
+              Math.min(...data.map(item => item.value || 0))) *
+            1.1
+          }
           yAxisColor="white"
           yAxisThickness={0.2}
           rulesType="solid"
           rulesColor="gray"
-          yAxisTextStyle={{color: 'gray'}}
+          yAxisTextStyle={{color: 'gray', fontSize: 10}}
+          xAxisLabelTextStyle={{color: 'gray', fontSize: 10}}
           xAxisColor="gray"
           xAxisType="solid"
+          yAxisOffset={Math.min(...data.map(item => item.value || 0))}
+          adjustToWidth
+          disableScroll
+          rotateLabel
           pointerConfig={{
             pointerStripHeight: 260,
             pointerStripColor: 'lightgray',
@@ -129,9 +139,7 @@ export const ChartScreen = () => {
             pointerLabelHeight: 90,
             activatePointersOnLongPress: true,
             autoAdjustPointerLabelPosition: false,
-            pointerLabelComponent: (items: lineDataItem[]) => {
-              return <PointerLabel items={items} />;
-            },
+            pointerLabelComponent,
           }}
         />
       </View>
