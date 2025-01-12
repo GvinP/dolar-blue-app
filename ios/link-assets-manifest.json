@@ -1,0 +1,13 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/IBMPlexSans-Medium.ttf",
+      "sha1": "217ea2eb48ec33e3076064ea9c9f8d953e7ce061"
+    },
+    {
+      "path": "assets/fonts/IBMPlexSans-Regular.ttf",
+      "sha1": "ad38f2d6870ca73533f36bdb958cd8083a49c1a8"
+    }
+  ]
+}
