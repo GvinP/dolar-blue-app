@@ -50,3 +50,10 @@ jobs:
       - name: Build Android (debug)
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dolar-blue-debug-${{ github.event.pull_request.number }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

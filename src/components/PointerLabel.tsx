@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {lineDataItem} from 'react-native-gifted-charts';
 
 type Props = {
@@ -40,5 +40,3 @@ export const PointerLabel = ({items}: Props) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({});
