@@ -1,6 +1,4 @@
-const SUPABASE_URL = 'https://rvcdqsdtamldqtbgpeka.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2Y2Rxc2R0YW1sZHF0YmdwZWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4ODI5MTUsImV4cCI6MjA5NzQ1ODkxNX0.Y_ByO25eGZkFm9H_cb8rk8F3o4ILx5ElDwrjAtT9Wfo';
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from '@env';
 
 /**
  * Lightweight wrapper around Supabase REST API (PostgREST).
