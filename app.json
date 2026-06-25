@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "android": {
       "package": "com.dolarblue"
     },
@@ -17,6 +20,9 @@
       "eas": {
         "projectId": ""
       }
-    }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }
