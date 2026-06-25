@@ -1,4 +1,22 @@
 {
-  "name": "DolarBlue",
-  "displayName": "DolarBlue"
+  "expo": {
+    "name": "DolarBlue",
+    "slug": "dolar-blue",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "platforms": ["ios", "android"],
+    "android": {
+      "package": "com.dolarblue"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dolarblue",
+      "supportsTablet": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
 }
