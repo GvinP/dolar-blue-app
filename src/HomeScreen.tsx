@@ -8,9 +8,9 @@ import {
 } from 'react-native';
 import {useCallback, useEffect, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
-import {RootStackParamList} from './types';
+import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {Cotizacion, fetchDolar} from './utils';
+import {fetchLatestQuotes} from './api/quotes';
 
 export const HomeScreen = () => {
   const navigation =
@@ -20,7 +20,7 @@ export const HomeScreen = () => {
 
   const fetchPrices = useCallback(async () => {
     try {
-      const response = await fetchDolar();
+      const response = await fetchLatestQuotes();
       setPrices(response);
     } catch (error) {
       console.error('Error fetching prices:', error);
@@ -52,6 +52,7 @@ export const HomeScreen = () => {
         <Pressable
           onPress={() =>
             navigation.navigate('ChartScreen', {
+              code: item.code,
               title: item.title,
             })
           }>
@@ -86,7 +87,7 @@ export const HomeScreen = () => {
       <FlatList
         data={prices}
         renderItem={renderItem}
-        keyExtractor={item => item.title}
+        keyExtractor={item => item.code}
         contentContainerStyle={styles.container}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refreshPrices} />

@@ -5,57 +5,24 @@ import {View, StyleSheet} from 'react-native';
 import {LineChart, lineDataItem} from 'react-native-gifted-charts';
 import {RootStackParamList} from './types';
 import {calculateLabelIndexes} from './utils';
-
-type Price = {
-  // date: string;
-  // source: 'Oficial' | 'Blue';
-  // value_sell: number;
-  // value_buy: number;
-  casa: string;
-  compra: number;
-  venta: number;
-  fecha: string;
-};
-
-const convertTitle = (title: string) => {
-  switch (title) {
-    case 'Dólar oficial':
-      return 'oficial';
-    case 'Dólar blue':
-      return 'blue';
-    case 'Dólar MEP/Bolsa':
-      return 'bolsa';
-    case 'Contado con liqui':
-      return 'contadoconliqui';
-    case 'Dólar cripto':
-      return 'cripto';
-    default:
-      return 'oficial';
-  }
-};
+import {fetchQuoteHistory, HistoryPrice} from './api/quotes';
 
 export const ChartScreen = () => {
-  const [prices, setPrices] = useState<Price[]>([]);
-  const [filteredPrices, setFilteredPrices] = useState<Price[]>([]);
+  const [prices, setPrices] = useState<HistoryPrice[]>([]);
+  const [filteredPrices, setFilteredPrices] = useState<HistoryPrice[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('semana');
   const {
-    params: {title},
+    params: {code},
   } = useRoute<RouteProp<RootStackParamList, 'ChartScreen'>>();
 
   const fetchPrices = useCallback(async () => {
     try {
-      const response = await fetch(
-        `https://api.argentinadatos.com/v1/cotizaciones/dolares/${convertTitle(
-          title,
-        )}`,
-        // 'https://api.bluelytics.com.ar/v2/evolution.json',
-      );
-      const priceData = await response.json();
-      setPrices(priceData.slice(-365));
+      const priceData = await fetchQuoteHistory(code);
+      setPrices(priceData);
     } catch (error) {
       console.error('Failed to fetch prices:', error);
     }
-  }, [title]);
+  }, [code]);
 
   useEffect(() => {
     fetchPrices();
@@ -91,7 +58,7 @@ export const ChartScreen = () => {
             alignItems: 'center',
             justifyContent: 'center',
             width: 28,
-            marginLeft: filteredPrices.length === 7 ? 25 : undefined,
+            marginLeft: filteredPrices.length === 7 ? -4 : 0,
           }
         : undefined,
     }));
@@ -103,54 +70,33 @@ export const ChartScreen = () => {
         selectedFilter={selectedFilter}
         setSelectedFilter={setSelectedFilter}
       />
-      <LineChart
-        data={data}
-        labelsExtraHeight={10}
-        width={330}
-        height={300}
-        hideDataPoints
-        spacing={
-          330 /
-          ((filters[filters.findIndex(item => item.type === selectedFilter)]
-            .value || prices.length) -
-            1)
-        }
-        color="#00ff83"
-        thickness={2}
-        startOpacity={0.9}
-        endOpacity={0.2}
-        initialSpacing={0}
-        noOfSections={6}
-        maxValue={
-          (Math.max(...data.map(item => item.value || 0)) -
-            Math.min(...data.map(item => item.value || 0))) *
-          1.1
-        }
-        yAxisColor="white"
-        yAxisThickness={0.2}
-        rulesType="solid"
-        rulesColor="gray"
-        yAxisTextStyle={{color: 'gray', fontSize: 10}}
-        xAxisLabelTextStyle={{color: 'gray', fontSize: 10}}
-        xAxisColor="gray"
-        xAxisType="solid"
-        yAxisOffset={Math.min(...data.map(item => item.value || 0))}
-        adjustToWidth
-        disableScroll
-        // rotateLabel
-        pointerConfig={{
-          pointerStripHeight: 260,
-          pointerStripColor: 'lightgray',
-          pointerStripWidth: 2,
-          pointerColor: 'lightgray',
-          radius: 6,
-          pointerLabelWidth: 100,
-          pointerLabelHeight: 90,
-          activatePointersOnLongPress: true,
-          autoAdjustPointerLabelPosition: false,
-          pointerLabelComponent,
-        }}
-      />
+      {data.length > 0 && (
+        <LineChart
+          data={data}
+          width={300}
+          height={200}
+          spacing={300 / data.length}
+          thickness={2}
+          color="#00ff83"
+          hideDataPoints
+          yAxisTextStyle={{color: 'white'}}
+          showVerticalLines
+          verticalLinesColor="rgba(14,164,164,0.1)"
+          xAxisColor="rgba(14,164,164,0.5)"
+          yAxisColor="rgba(14,164,164,0.5)"
+          pointerConfig={{
+            pointerStripUptoDataPoint: true,
+            pointerStripColor: 'lightgray',
+            pointerStripWidth: 2,
+            strokeDashArray: [2, 5],
+            pointerColor: 'lightgray',
+            radius: 6,
+            pointerLabelWidth: 100,
+            pointerLabelHeight: 90,
+            pointerLabelComponent: pointerLabelComponent,
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -159,10 +105,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#25292e',
+    alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  text: {
-    color: '#fff',
+    padding: 16,
   },
 });
