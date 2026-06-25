@@ -78,3 +78,8 @@ supabase/.temp/
 # Environment variables
 .env
 .env.local
+
+# Expo
+.expo
+dist/
+web-build/
