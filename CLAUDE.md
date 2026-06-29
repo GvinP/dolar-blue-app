@@ -51,7 +51,8 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 - Edge Function base URL: `https://rvcdqsdtamldqtbgpeka.supabase.co/functions/v1/`
 - Tables:
   - `quotes_latest` — current value per quote code
-  - `quotes_history` — time series
+  - `quotes_history` — time series (raw, every ~5 min)
+  - `quotes_history_daily` — view: daily AVG aggregates per code (Argentina TZ)
 - RLS: public **reads**, service-role-only **writes**.
 
 ### ⚠️ Schema gotchas (read before writing any query)
@@ -112,7 +113,7 @@ The repo is a Node project, so the Deno Edge Function code triggers
 
 - M1 — Supabase backend ✅
 - M2 — Expo migration (SDK 52 + EAS Build) ✅
-- M3 — client refactor to read from Supabase (in progress: history still from argentinadatos)
+- M3 — client refactor ✅ (TanStack Query, UI states, Supabase history with argentinadatos fallback)
 - M4 — push notifications
 - M5 — widgets
 - Cross-cutting: quality + UX tracks
