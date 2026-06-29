@@ -5,6 +5,7 @@ import {HomeScreen} from './HomeScreen';
 import {ChartScreen} from './ChartScreen';
 import {RootStackParamList} from './types';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 
 // const {WidgetModule} = NativeModules;
 // const updateWidget = (text: string) => {
@@ -12,9 +13,11 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 // };
 
 const Stack = createStackNavigator<RootStackParamList>();
+const queryClient = new QueryClient();
 
 const App = () => {
   return (
+    <QueryClientProvider client={queryClient}>
     <GestureHandlerRootView>
       <NavigationContainer>
         <Stack.Navigator>
@@ -39,6 +42,7 @@ const App = () => {
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 };
 
