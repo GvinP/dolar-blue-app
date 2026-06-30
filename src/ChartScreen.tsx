@@ -1,42 +1,33 @@
 import {RouteProp, useRoute} from '@react-navigation/native';
 import {filters, FiltersBlock, FilterType, PointerLabel} from './components';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {View, StyleSheet} from 'react-native';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import {LineChart, lineDataItem} from 'react-native-gifted-charts';
 import {RootStackParamList} from './types';
 import {calculateLabelIndexes} from './utils';
 import {fetchQuoteHistory, HistoryPrice} from './api/quotes';
+import {useQuery} from '@tanstack/react-query';
 
 export const ChartScreen = () => {
-  const [prices, setPrices] = useState<HistoryPrice[]>([]);
   const [filteredPrices, setFilteredPrices] = useState<HistoryPrice[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('semana');
   const {
     params: {code},
   } = useRoute<RouteProp<RootStackParamList, 'ChartScreen'>>();
 
-  const fetchPrices = useCallback(async () => {
-    try {
-      const priceData = await fetchQuoteHistory(code);
-      setPrices(priceData);
-    } catch (error) {
-      console.error('Failed to fetch prices:', error);
-    }
-  }, [code]);
+  const {
+    data: prices = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['history', code],
+    queryFn: () => fetchQuoteHistory(code),
+  });
 
   useEffect(() => {
-    fetchPrices();
-  }, [fetchPrices]);
-
-  useEffect(() => {
-    setFilteredPrices(
-      prices.slice(
-        -(
-          filters[filters.findIndex(item => item.type === selectedFilter)]
-            .value || prices.length
-        ),
-      ),
-    );
+    const filter = filters.find(item => item.type === selectedFilter);
+    const sliceCount = filter?.value ?? prices.length;
+    setFilteredPrices(prices.slice(-sliceCount));
   }, [selectedFilter, prices]);
 
   const pointerLabelComponent = useCallback((items: lineDataItem[]) => {
@@ -44,6 +35,9 @@ export const ChartScreen = () => {
   }, []);
 
   const data = useMemo<lineDataItem[]>(() => {
+    if (filteredPrices.length === 0) {
+      return [];
+    }
     const indexes = calculateLabelIndexes(filteredPrices.length);
     return filteredPrices.map<lineDataItem>((item, index) => ({
       value: item.compra,
@@ -64,13 +58,29 @@ export const ChartScreen = () => {
     }));
   }, [filteredPrices]);
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator color="#00ff83" size="large" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.messageText}>No se pudo cargar el historial.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FiltersBlock
         selectedFilter={selectedFilter}
         setSelectedFilter={setSelectedFilter}
       />
-      {data.length > 0 && (
+      {data.length > 0 ? (
         <LineChart
           data={data}
           width={300}
@@ -96,6 +106,10 @@ export const ChartScreen = () => {
             pointerLabelComponent: pointerLabelComponent,
           }}
         />
+      ) : (
+        <View style={styles.emptyChart}>
+          <Text style={styles.messageText}>Sin datos para este período.</Text>
+        </View>
       )}
     </View>
   );
@@ -108,5 +122,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
+  },
+  emptyChart: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageText: {
+    color: '#808080',
+    fontSize: 15,
+    textAlign: 'center',
   },
 });

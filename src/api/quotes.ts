@@ -9,7 +9,7 @@ const formatPrice = (value: string | null): string | undefined => {
   if (value == null) {
     return undefined;
   }
-  const num = parseFloat(value);
+  const num = parseFloat(String(value));
   if (isNaN(num)) {
     return undefined;
   }
@@ -66,9 +66,27 @@ export const fetchLatestQuotes = async (): Promise<Cotizacion[]> => {
     }));
 };
 
+export type HistoryPrice = {
+  compra: number;
+  venta: number;
+  fecha: string; // "YYYY-MM-DD"
+};
+
+/**
+ * Fetch daily-aggregated history from Supabase quotes_history_daily view.
+ * Returns one entry per calendar day (Argentina timezone).
+ */
+const fetchQuoteHistoryFromSupabase = async (
+  code: QuoteCode,
+): Promise<HistoryPrice[]> => {
+  return supabaseGet<HistoryPrice>(
+    'quotes_history_daily',
+    `code=eq.${code}&order=fecha.asc&select=compra,venta,fecha`,
+  );
+};
+
 /**
  * Map our Supabase codes → argentinadatos API path segments.
- * Used by ChartScreen until quotes_history accumulates enough data.
  */
 const ARGENTINADATOS_CODE_MAP: Record<QuoteCode, string> = {
   blue: 'blue',
@@ -79,26 +97,43 @@ const ARGENTINADATOS_CODE_MAP: Record<QuoteCode, string> = {
   cripto: 'cripto',
 };
 
-export type HistoryPrice = {
-  compra: number;
-  venta: number;
-  fecha: string; // "YYYY-MM-DD"
-};
-
-/**
- * Fetch historical prices from argentinadatos (kept as-is for M2;
- * will migrate to Supabase quotes_history once enough data accumulates).
- */
-export const fetchQuoteHistory = async (
+const fetchQuoteHistoryFromArgentinadatos = async (
   code: QuoteCode,
 ): Promise<HistoryPrice[]> => {
   const apiCode = ARGENTINADATOS_CODE_MAP[code];
   const response = await fetch(
     `https://api.argentinadatos.com/v1/cotizaciones/dolares/${apiCode}`,
   );
+  if (!response.ok) {
+    throw new Error(`argentinadatos error: ${response.status}`);
+  }
   const data = await response.json();
-  // API returns {casa, compra, venta, fecha} — keep only what we need
   return (data as Array<{compra: number; venta: number; fecha: string}>)
     .slice(-365)
     .map(({compra, venta, fecha}) => ({compra, venta, fecha}));
+};
+
+/**
+ * Minimum days of Supabase history required to use it as the primary source.
+ * Below this threshold we fall back to argentinadatos (which has a full year).
+ */
+const SUPABASE_HISTORY_MIN_DAYS = 30;
+
+/**
+ * Fetch historical prices.
+ * Uses Supabase once it has accumulated ≥30 days; falls back to argentinadatos.
+ * As data accumulates the cutover happens automatically.
+ */
+export const fetchQuoteHistory = async (
+  code: QuoteCode,
+): Promise<HistoryPrice[]> => {
+  try {
+    const rows = await fetchQuoteHistoryFromSupabase(code);
+    if (rows.length >= SUPABASE_HISTORY_MIN_DAYS) {
+      return rows;
+    }
+  } catch {
+    // fall through to argentinadatos
+  }
+  return fetchQuoteHistoryFromArgentinadatos(code);
 };

@@ -63,10 +63,13 @@
 - [x] **Слой данных: `src/api/` (fetchLatestQuotes, fetchQuoteHistory).**
 - [x] **`code` в ChartScreen вместо `title` (убран хрупкий convertTitle).**
 - [x] **Единый тип котировки (QuoteCode, QuoteRow, Cotizacion).**
-- [ ] **История из `quotes_history` (сейчас всё ещё argentinadatos).**
-- [ ] **Подключить TanStack Query (React Query).**
-- [ ] **Состояния загрузки / ошибки / пусто на UI.**
-- [ ] **Guard'ы графика от пустых данных (Math.max/min на пустом массиве).**
+- [x] **Подключить TanStack Query (React Query).**
+- [x] **Состояния загрузки / ошибки / пусто на UI.**
+- [x] **Guard'ы графика от пустых данных (Math.max/min на пустом массиве).**
+- [x] **История из `quotes_history_daily` (Supabase-вьюха с дневными агрегатами).**
+  - Вьюха создана через миграцию. `fetchQuoteHistory` пробует Supabase;
+    если данных < 30 дней — fallback на argentinadatos. Переход произойдёт
+    автоматически после накопления ≥ 30 дней (~20 июля 2026).
 
 ## M4 — Пуш-уведомления о пороге цены
 
