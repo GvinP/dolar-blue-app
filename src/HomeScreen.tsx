@@ -6,13 +6,17 @@ import {
   RefreshControl,
   FlatList,
   ActivityIndicator,
+  NativeModules,
+  Platform,
 } from 'react-native';
-import {useCallback} from 'react';
+import {useCallback, useEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {fetchLatestQuotes} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
+
+const {WidgetModule} = NativeModules;
 
 export const HomeScreen = () => {
   const navigation =
@@ -28,6 +32,21 @@ export const HomeScreen = () => {
     queryKey: ['quotes'],
     queryFn: fetchLatestQuotes,
   });
+
+  useEffect(() => {
+    if (!prices || Platform.OS !== 'android' || !WidgetModule) return;
+    const blue = prices.find(p => p.code === 'blue');
+    const oficial = prices.find(p => p.code === 'oficial');
+    if (!blue || !oficial) return;
+    WidgetModule.updateWidget({
+      blueBuy: blue.compra ?? '–',
+      blueSell: blue.venta ?? '–',
+      bluePct: blue.porcentaje ?? '',
+      oficialBuy: oficial.compra ?? '–',
+      oficialSell: oficial.venta ?? '–',
+      oficialPct: oficial.porcentaje ?? '',
+    });
+  }, [prices]);
 
   const porcentajeColor = useCallback(
     (porcentaje?: string) =>
