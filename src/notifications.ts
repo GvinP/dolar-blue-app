@@ -1,5 +1,6 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import {Platform} from 'react-native';
 import {SUPABASE_URL, SUPABASE_ANON_KEY} from '@env';
 
@@ -45,9 +46,15 @@ export async function registerForPushNotifications(): Promise<void> {
     return;
   }
 
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  if (!projectId) {
+    console.error('[notifications] missing EAS projectId in app.json — run `eas init`');
+    return;
+  }
+
   let token: string;
   try {
-    const result = await Notifications.getExpoPushTokenAsync();
+    const result = await Notifications.getExpoPushTokenAsync({projectId});
     token = result.data;
   } catch (e) {
     console.error('[notifications] failed to get push token:', e);
