@@ -23,14 +23,7 @@
     },
     "plugins": [
       "expo-asset",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#25292e",
-          "sounds": []
-        }
-      ]
+      "expo-notifications"
     ]
   }
 }
