@@ -11,15 +11,17 @@
         "buildType": "apk"
       }
     },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "staging": {
       "distribution": "internal",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleStaging"
-      },
-      "env": {
-        "SUPABASE_URL": "",
-        "SUPABASE_ANON_KEY": ""
       }
     },
     "production": {
