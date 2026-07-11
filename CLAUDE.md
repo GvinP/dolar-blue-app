@@ -53,7 +53,14 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
   - `quotes_latest` — current value per quote code
   - `quotes_history` — time series (raw, every ~5 min)
   - `quotes_history_daily` — view: daily AVG aggregates per code (Argentina TZ)
-- RLS: public **reads**, service-role-only **writes**.
+  - `push_tokens` — Expo push tokens (anon INSERT, service-role-only reads/updates)
+- RLS: public **reads**, service-role-only **writes** (except `push_tokens`: anon INSERT allowed).
+- Edge Functions:
+  - `scrape-quotes` — scrapes dolarhoy.com, upserts quotes, triggered by pg_cron every 5 min
+  - `send-notifications` — checks blue rate delta, sends Expo push if Δ ≥ 2%, triggered 1 min after scrape
+- pg_cron jobs:
+  - `scrape-dolar-quotes`: `*/5 * * * *`
+  - `send-notifications-after-scrape`: `1,6,11,16,21,26,31,36,41,46,51,56 * * * *`
 
 ### ⚠️ Schema gotchas (read before writing any query)
 
@@ -114,7 +121,7 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M1 — Supabase backend ✅
 - M2 — Expo migration (SDK 52 + EAS Build) ✅
 - M3 — client refactor ✅ (TanStack Query, UI states, Supabase history with argentinadatos fallback)
-- M4 — push notifications
+- M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
 - M5 — widgets
 - Cross-cutting: quality + UX tracks
 
