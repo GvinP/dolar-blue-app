@@ -106,7 +106,11 @@ function parseHtml(html: string): RawQuote[] {
     const valNodes = tile.querySelectorAll(".val");
     const compra    = valNodes[0]?.textContent?.trim();
     const venta     = valNodes[1]?.textContent?.trim();
-    const porcentaje = tile.querySelector(".var-porcentaje")?.textContent?.trim();
+    // .var-porcentaje иногда содержит SVG-стрелку (chevron) с инлайновым <style>,
+    // чей CSS-текст (".is-7 ... .st12{fill:#005c35}") склеивается с textContent.
+    // Поэтому вытаскиваем число регэкспом по innerHTML, а не берём textContent целиком.
+    const pctMatch = tile.querySelector(".var-porcentaje")?.innerHTML.match(/(-?[\d.,]+)\s*%/);
+    const porcentaje = pctMatch ? `${pctMatch[1]}%` : undefined;
 
     if (!compra && !venta) continue;
     results.push({ title, compra, venta, porcentaje });
