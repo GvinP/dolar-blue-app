@@ -136,7 +136,8 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M2 — Expo migration (SDK 52 + EAS Build) ✅
 - M3 — client refactor ✅ (TanStack Query, UI states, Supabase history with argentinadatos fallback)
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
-- M5 — widgets
+- M5 — Android home screen widget ✅ (Blue + Oficial, SharedPreferences fed from HomeScreen after
+  Supabase fetch, no native scraping) — merged untested on-device; verify on next build
 - Cross-cutting: quality + UX tracks
 
 ## Communication
