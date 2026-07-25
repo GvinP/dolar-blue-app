@@ -83,6 +83,20 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 - `mayorista` is currently absent from dolarhoy; the scraper will pick it up
   automatically if it reappears.
 
+## Environment variables
+
+`SUPABASE_URL` / `SUPABASE_ANON_KEY` are baked into the client bundle at **build time**
+via `react-native-dotenv` (`babel.config.js` → `@env`), not read at runtime. Copy
+`.env.example` to `.env` and fill in the anon key before running `npm start` or building
+locally. `src/api/supabase.ts` throws a clear error at request time if either is missing —
+if the app shows a generic "no se pudieron cargar las cotizaciones" with zero requests
+reaching Supabase, check this first.
+
+CI (`.github/workflows/ci.yml`, `android-build` job) generates `.env` from the GitHub
+Actions secrets `SUPABASE_URL` / `SUPABASE_ANON_KEY` — if a build produced by that
+pipeline can't load quotes, verify those repo secrets are set (Settings → Secrets and
+variables → Actions), since an empty/missing secret silently produces an empty `.env`.
+
 ## Common commands
 
 > Verify these against `package.json` and update if they differ.
