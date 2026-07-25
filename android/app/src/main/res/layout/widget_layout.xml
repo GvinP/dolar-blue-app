@@ -13,7 +13,7 @@
         android:layout_marginEnd="36dp"
         android:orientation="vertical">
 
-        <!-- Dólar Blue -->
+        <!-- Slot 1 (siempre visible) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,17 +27,16 @@
                 android:gravity="center_vertical">
 
                 <TextView
-                    android:id="@+id/blue_title"
+                    android:id="@+id/slot1_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Dólar Blue"
                     android:textStyle="bold"
                     android:textSize="13sp"
                     android:textColor="#ffffff" />
 
                 <TextView
-                    android:id="@+id/blue_porcentaje"
+                    android:id="@+id/slot1_porcentaje"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="11sp"
@@ -58,7 +57,7 @@
                     android:textColor="#808080" />
 
                 <TextView
-                    android:id="@+id/blue_compra"
+                    android:id="@+id/slot1_compra"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
@@ -72,7 +71,7 @@
                     android:textColor="#808080" />
 
                 <TextView
-                    android:id="@+id/blue_venta"
+                    android:id="@+id/slot1_venta"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
@@ -80,15 +79,17 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Separador (TextView, no View — RemoteViews no soporta android.view.View plano) -->
+        <!-- Separador (oculto si slot2 no está configurado) -->
         <TextView
+            android:id="@+id/slot2_separator"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#3a3f47"
             android:layout_marginBottom="8dp" />
 
-        <!-- Dólar Oficial -->
+        <!-- Slot 2 (oculto si no está configurado) -->
         <LinearLayout
+            android:id="@+id/slot2_block"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -100,17 +101,16 @@
                 android:gravity="center_vertical">
 
                 <TextView
-                    android:id="@+id/oficial_title"
+                    android:id="@+id/slot2_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Dólar Oficial"
                     android:textStyle="bold"
                     android:textSize="13sp"
                     android:textColor="#ffffff" />
 
                 <TextView
-                    android:id="@+id/oficial_porcentaje"
+                    android:id="@+id/slot2_porcentaje"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="11sp"
@@ -131,7 +131,7 @@
                     android:textColor="#808080" />
 
                 <TextView
-                    android:id="@+id/oficial_compra"
+                    android:id="@+id/slot2_compra"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
@@ -145,7 +145,7 @@
                     android:textColor="#808080" />
 
                 <TextView
-                    android:id="@+id/oficial_venta"
+                    android:id="@+id/slot2_venta"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"

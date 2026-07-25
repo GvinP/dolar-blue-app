@@ -4,6 +4,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {HomeScreen} from './HomeScreen';
 import {ChartScreen} from './ChartScreen';
+import {SettingsScreen} from './SettingsScreen';
 import {RootStackParamList} from './types';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
@@ -41,6 +42,15 @@ const App = () => {
             component={ChartScreen}
             options={{
               title: 'Chart',
+              headerStyle: {backgroundColor: '#25292e'},
+              headerTintColor: '#fff',
+            }}
+          />
+          <Stack.Screen
+            name="SettingsScreen"
+            component={SettingsScreen}
+            options={{
+              title: 'Ajustes',
               headerStyle: {backgroundColor: '#25292e'},
               headerTintColor: '#fff',
             }}

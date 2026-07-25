@@ -5,51 +5,64 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-// Порог изменения курса (2%) — если больше, шлём уведомление
-const CHANGE_THRESHOLD = 0.02;
-
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+const CODE_NAMES: Record<string, string> = {
+  blue: "Dólar Blue",
+  oficial: "Dólar Oficial",
+  mep: "Dólar MEP",
+  ccl: "Dólar CCL",
+  tarjeta: "Dólar Tarjeta",
+  cripto: "Dólar Cripto",
+};
 
 interface HistoryRow {
   sell: number | null;
   captured_at: string;
 }
 
+interface TokenRow {
+  token: string;
+  watch_code: string;
+  threshold_pct: number;
+}
+
+interface Delta {
+  curr: number;
+  prev: number;
+  delta: number;
+  absDeltaPct: number;
+}
+
+// Cada token puede vigilar un código distinto con su propio umbral, así que
+// calculamos el delta una sola vez por código (no por token).
+async function computeDelta(code: string): Promise<Delta | null> {
+  const { data: rows, error } = await supabase
+    .from("quotes_history")
+    .select("sell, captured_at")
+    .eq("code", code)
+    .not("sell", "is", null)
+    .order("captured_at", { ascending: false })
+    .limit(2);
+
+  if (error) throw error;
+  if (!rows || rows.length < 2) return null;
+
+  const [current, previous] = rows as HistoryRow[];
+  const curr = current.sell!;
+  const prev = previous.sell!;
+  if (prev === 0) return null;
+
+  const delta = (curr - prev) / prev;
+  return { curr, prev, delta, absDeltaPct: Math.abs(delta) * 100 };
+}
+
 Deno.serve(async (_req) => {
   try {
-    // 1. Берём два последних значения blue из истории
-    const { data: rows, error: histErr } = await supabase
-      .from("quotes_history")
-      .select("sell, captured_at")
-      .eq("code", "blue")
-      .not("sell", "is", null)
-      .order("captured_at", { ascending: false })
-      .limit(2);
-
-    if (histErr) throw histErr;
-    if (!rows || rows.length < 2) {
-      return json({ ok: true, skipped: "not enough history" });
-    }
-
-    const [current, previous] = rows as HistoryRow[];
-    const curr = current.sell!;
-    const prev = previous.sell!;
-
-    if (prev === 0) return json({ ok: true, skipped: "prev sell is zero" });
-
-    const delta = (curr - prev) / prev;
-    const absDelta = Math.abs(delta);
-
-    console.log(`Blue sell: ${prev} → ${curr}, Δ=${(delta * 100).toFixed(2)}%`);
-
-    if (absDelta < CHANGE_THRESHOLD) {
-      return json({ ok: true, skipped: `delta ${(absDelta * 100).toFixed(2)}% below threshold` });
-    }
-
-    // 2. Получаем все активные токены
+    // 1. Traemos todos los tokens activos con sus preferencias
     const { data: tokenRows, error: tokErr } = await supabase
       .from("push_tokens")
-      .select("token")
+      .select("token, watch_code, threshold_pct")
       .eq("active", true);
 
     if (tokErr) throw tokErr;
@@ -57,15 +70,42 @@ Deno.serve(async (_req) => {
       return json({ ok: true, skipped: "no active tokens" });
     }
 
-    const direction = delta > 0 ? "▲" : "▼";
-    const pct = (absDelta * 100).toFixed(1);
-    const title = `Dólar Blue ${direction} ${pct}%`;
-    const body = `Venta $${Math.round(curr)}`;
+    // 2. Agrupamos por código vigilado para no recalcular el delta por token
+    const tokensByCode = new Map<string, TokenRow[]>();
+    for (const row of tokenRows as TokenRow[]) {
+      const list = tokensByCode.get(row.watch_code) ?? [];
+      list.push(row);
+      tokensByCode.set(row.watch_code, list);
+    }
 
-    // 3. Expo Push API принимает батчи до 100 токенов
-    const tokens = tokenRows.map((r: { token: string }) => r.token);
-    const messages = tokens.map((to: string) => ({ to, title, body, sound: "default" }));
+    const messages: Array<{ to: string; title: string; body: string; sound: string }> = [];
+    const deltaByCode: Record<string, string> = {};
 
+    for (const [code, tokens] of tokensByCode) {
+      const delta = await computeDelta(code);
+      if (!delta) continue;
+
+      const { curr, delta: rawDelta, absDeltaPct } = delta;
+      deltaByCode[code] = `${(rawDelta * 100).toFixed(2)}%`;
+      console.log(`${code}: Δ=${absDeltaPct.toFixed(2)}% (${tokens.length} tokens watching)`);
+
+      const direction = rawDelta > 0 ? "▲" : "▼";
+      const name = CODE_NAMES[code] ?? code;
+      const title = `${name} ${direction} ${absDeltaPct.toFixed(1)}%`;
+      const body = `Venta $${Math.round(curr)}`;
+
+      for (const t of tokens) {
+        if (absDeltaPct >= t.threshold_pct) {
+          messages.push({ to: t.token, title, body, sound: "default" });
+        }
+      }
+    }
+
+    if (messages.length === 0) {
+      return json({ ok: true, skipped: "no thresholds crossed", deltas: deltaByCode });
+    }
+
+    // 3. Expo Push API acepta lotes de hasta 100 mensajes
     const chunks: typeof messages[] = [];
     for (let i = 0; i < messages.length; i += 100) {
       chunks.push(messages.slice(i, i + 100));
@@ -104,13 +144,13 @@ Deno.serve(async (_req) => {
       }
     }
 
-    console.log(`Sent notifications: ${sent}/${tokens.length}, errors: ${errors.length}`);
+    console.log(`Sent notifications: ${sent}/${messages.length}, errors: ${errors.length}`);
 
     return json({
       ok: true,
       sent,
-      total: tokens.length,
-      delta: `${(delta * 100).toFixed(2)}%`,
+      total: messages.length,
+      deltas: deltaByCode,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err) {

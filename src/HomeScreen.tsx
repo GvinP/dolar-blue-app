@@ -9,18 +9,32 @@ import {
   NativeModules,
   Platform,
 } from 'react-native';
-import {useCallback, useEffect} from 'react';
-import {useNavigation} from '@react-navigation/native';
+import {useCallback, useEffect, useLayoutEffect} from 'react';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {fetchLatestQuotes} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
+import {getWidgetConfig} from './settings';
 
 const {WidgetModule} = NativeModules;
 
 export const HomeScreen = () => {
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, 'HomeScreen'>>();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => navigation.navigate('SettingsScreen')}
+          style={styles.settingsButton}
+          hitSlop={12}>
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation]);
 
   const {
     data: prices,
@@ -33,20 +47,36 @@ export const HomeScreen = () => {
     queryFn: fetchLatestQuotes,
   });
 
-  useEffect(() => {
+  const updateWidget = useCallback(async () => {
     if (!prices || Platform.OS !== 'android' || !WidgetModule) return;
-    const blue = prices.find(p => p.code === 'blue');
-    const oficial = prices.find(p => p.code === 'oficial');
-    if (!blue || !oficial) return;
+    const config = await getWidgetConfig();
+    const slot1 = prices.find(p => p.code === config.slot1);
+    const slot2 = config.slot2 ? prices.find(p => p.code === config.slot2) : undefined;
+    if (!slot1) return;
     WidgetModule.updateWidget({
-      blueBuy: blue.compra ?? '–',
-      blueSell: blue.venta ?? '–',
-      bluePct: blue.porcentaje ?? '',
-      oficialBuy: oficial.compra ?? '–',
-      oficialSell: oficial.venta ?? '–',
-      oficialPct: oficial.porcentaje ?? '',
+      slot1Title: slot1.title,
+      slot1Buy: slot1.compra ?? '–',
+      slot1Sell: slot1.venta ?? '–',
+      slot1Pct: slot1.porcentaje ?? '',
+      slot2Visible: !!slot2,
+      slot2Title: slot2?.title ?? '',
+      slot2Buy: slot2?.compra ?? '–',
+      slot2Sell: slot2?.venta ?? '–',
+      slot2Pct: slot2?.porcentaje ?? '',
     });
   }, [prices]);
+
+  // Котировки обновились — синхронизируем виджет
+  useEffect(() => {
+    updateWidget();
+  }, [updateWidget]);
+
+  // Вернулись из SettingsScreen — конфигурация слотов могла поменяться
+  useFocusEffect(
+    useCallback(() => {
+      updateWidget();
+    }, [updateWidget]),
+  );
 
   const porcentajeColor = useCallback(
     (porcentaje?: string) =>
@@ -182,5 +212,12 @@ const styles = StyleSheet.create({
   },
   porcentaje: {
     marginLeft: 'auto',
+  },
+  settingsButton: {
+    marginRight: 16,
+  },
+  settingsIcon: {
+    color: '#fff',
+    fontSize: 20,
   },
 });

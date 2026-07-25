@@ -6,18 +6,22 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.view.View
 import android.widget.RemoteViews
 
 class WidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val PREFS_NAME = "DolarBlueWidget"
-        const val KEY_BLUE_BUY = "blue_buy"
-        const val KEY_BLUE_SELL = "blue_sell"
-        const val KEY_BLUE_PCT = "blue_pct"
-        const val KEY_OFICIAL_BUY = "oficial_buy"
-        const val KEY_OFICIAL_SELL = "oficial_sell"
-        const val KEY_OFICIAL_PCT = "oficial_pct"
+        const val KEY_SLOT1_TITLE = "slot1_title"
+        const val KEY_SLOT1_BUY = "slot1_buy"
+        const val KEY_SLOT1_SELL = "slot1_sell"
+        const val KEY_SLOT1_PCT = "slot1_pct"
+        const val KEY_SLOT2_VISIBLE = "slot2_visible"
+        const val KEY_SLOT2_TITLE = "slot2_title"
+        const val KEY_SLOT2_BUY = "slot2_buy"
+        const val KEY_SLOT2_SELL = "slot2_sell"
+        const val KEY_SLOT2_PCT = "slot2_pct"
 
         private const val COLOR_POSITIVE = "#00ff83" // mismo verde que en HomeScreen
         private const val COLOR_NEGATIVE = "#af2030" // mismo rojo que en HomeScreen
@@ -58,19 +62,27 @@ class WidgetProvider : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.widget_root, openApp)
         views.setOnClickPendingIntent(R.id.refresh_button, openApp)
 
-        // Blue
-        val bluePct = prefs.getString(KEY_BLUE_PCT, "") ?: ""
-        views.setTextViewText(R.id.blue_compra, prefs.getString(KEY_BLUE_BUY, "–") ?: "–")
-        views.setTextViewText(R.id.blue_venta, prefs.getString(KEY_BLUE_SELL, "–") ?: "–")
-        views.setTextViewText(R.id.blue_porcentaje, bluePct)
-        views.setTextColor(R.id.blue_porcentaje, pctColor(bluePct))
+        // Slot 1 (siempre visible)
+        views.setTextViewText(R.id.slot1_title, prefs.getString(KEY_SLOT1_TITLE, "") ?: "")
+        views.setTextViewText(R.id.slot1_compra, prefs.getString(KEY_SLOT1_BUY, "–") ?: "–")
+        views.setTextViewText(R.id.slot1_venta, prefs.getString(KEY_SLOT1_SELL, "–") ?: "–")
+        val slot1Pct = prefs.getString(KEY_SLOT1_PCT, "") ?: ""
+        views.setTextViewText(R.id.slot1_porcentaje, slot1Pct)
+        views.setTextColor(R.id.slot1_porcentaje, pctColor(slot1Pct))
 
-        // Oficial
-        val oficialPct = prefs.getString(KEY_OFICIAL_PCT, "") ?: ""
-        views.setTextViewText(R.id.oficial_compra, prefs.getString(KEY_OFICIAL_BUY, "–") ?: "–")
-        views.setTextViewText(R.id.oficial_venta, prefs.getString(KEY_OFICIAL_SELL, "–") ?: "–")
-        views.setTextViewText(R.id.oficial_porcentaje, oficialPct)
-        views.setTextColor(R.id.oficial_porcentaje, pctColor(oficialPct))
+        // Slot 2 (configurable desde Ajustes; oculto si el usuario no eligió un segundo curso)
+        val slot2Visible = prefs.getBoolean(KEY_SLOT2_VISIBLE, true)
+        val slot2Visibility = if (slot2Visible) View.VISIBLE else View.GONE
+        views.setViewVisibility(R.id.slot2_separator, slot2Visibility)
+        views.setViewVisibility(R.id.slot2_block, slot2Visibility)
+        if (slot2Visible) {
+            views.setTextViewText(R.id.slot2_title, prefs.getString(KEY_SLOT2_TITLE, "") ?: "")
+            views.setTextViewText(R.id.slot2_compra, prefs.getString(KEY_SLOT2_BUY, "–") ?: "–")
+            views.setTextViewText(R.id.slot2_venta, prefs.getString(KEY_SLOT2_SELL, "–") ?: "–")
+            val slot2Pct = prefs.getString(KEY_SLOT2_PCT, "") ?: ""
+            views.setTextViewText(R.id.slot2_porcentaje, slot2Pct)
+            views.setTextColor(R.id.slot2_porcentaje, pctColor(slot2Pct))
+        }
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
