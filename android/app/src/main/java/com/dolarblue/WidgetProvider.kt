@@ -4,102 +4,54 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent   
+import android.content.Intent
 import android.widget.RemoteViews
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 
 class WidgetProvider : AppWidgetProvider() {
 
     companion object {
-        const val ACTION_UPDATE_WIDGET = "com.dolarblue.action.UPDATE_WIDGET"
-        const val EXTRA_WIDGET_TEXT = "com.dolarblue.extra.WIDGET_TEXT"
+        const val PREFS_NAME = "DolarBlueWidget"
+        const val KEY_BLUE_BUY = "blue_buy"
+        const val KEY_BLUE_SELL = "blue_sell"
+        const val KEY_BLUE_PCT = "blue_pct"
+        const val KEY_OFICIAL_BUY = "oficial_buy"
+        const val KEY_OFICIAL_SELL = "oficial_sell"
+        const val KEY_OFICIAL_PCT = "oficial_pct"
     }
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            updateWidget(context, appWidgetManager, appWidgetId)
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray,
+    ) {
+        for (id in appWidgetIds) {
+            renderWidget(context, appWidgetManager, id)
         }
     }
 
-    private fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        val remoteViews = RemoteViews(context.packageName, R.layout.widget_layout)
-        val intent = Intent(context, MainActivity::class.java)
-    val pendingIntent = PendingIntent.getActivity(
-        context,
-        0,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    remoteViews.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+    fun renderWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val views = RemoteViews(context.packageName, R.layout.widget_layout)
 
-    // Refresh button logic
-    val refreshIntent = Intent(context, WidgetProvider::class.java).apply {
-        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
-    }
-    val refreshPendingIntent = PendingIntent.getBroadcast(
-        context,
-        appWidgetId,
-        refreshIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    remoteViews.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent)
-    
-        // Fetch data using Coroutine
-        CoroutineScope(Dispatchers.IO).launch {
-            val data = fetchDolarData()
-    
-            val dolarBlue = data["Dólar blue"]
-            val dolarCripto = data["Dólar cripto"]
-    
-            withContext(Dispatchers.Main) {
-                dolarBlue?.let {
-                    remoteViews.setTextViewText(R.id.blue_compra, it.first)
-                    remoteViews.setTextViewText(R.id.blue_venta, it.second)
-                    remoteViews.setTextViewText(R.id.blue_porcentaje, it.third)
-                }
-    
-                dolarCripto?.let {
-                    remoteViews.setTextViewText(R.id.cripto_compra, it.first)
-                    remoteViews.setTextViewText(R.id.cripto_venta, it.second)
-                    remoteViews.setTextViewText(R.id.cripto_porcentaje, it.third)
-                }
-    
-                appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
-            }
-        }
-    }
-    
+        // Tap anywhere → open app
+        val openApp = PendingIntent.getActivity(
+            context, 0,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        views.setOnClickPendingIntent(R.id.widget_root, openApp)
+        views.setOnClickPendingIntent(R.id.refresh_button, openApp)
 
+        // Blue
+        views.setTextViewText(R.id.blue_compra, prefs.getString(KEY_BLUE_BUY, "–") ?: "–")
+        views.setTextViewText(R.id.blue_venta, prefs.getString(KEY_BLUE_SELL, "–") ?: "–")
+        views.setTextViewText(R.id.blue_porcentaje, prefs.getString(KEY_BLUE_PCT, "") ?: "")
 
-    private suspend fun fetchDolarData(): Map<String, Triple<String, String, String>> {
-        val result = mutableMapOf<String, Triple<String, String, String>>()
-    
-        try {
-            val url = "https://www.dolarhoy.com"
-            val doc = Jsoup.connect(url).get()
-    
-            val tiles = doc.select(".tile.is-child")
-    
-            for (tile in tiles) {
-                val title = tile.select(".title").text()
-                if (title == "Dólar blue" || title == "Dólar cripto") {
-                    val compra = tile.select(".val").getOrNull(0)?.text() ?: ""
-                    val venta = tile.select(".val").getOrNull(1)?.text() ?: ""
-                    val porcentaje = tile.select(".var-porcentaje").getOrNull(0)?.text() ?: ""
-                    result[title] = Triple(compra, venta, porcentaje)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    
-        return result
+        // Oficial
+        views.setTextViewText(R.id.oficial_compra, prefs.getString(KEY_OFICIAL_BUY, "–") ?: "–")
+        views.setTextViewText(R.id.oficial_venta, prefs.getString(KEY_OFICIAL_SELL, "–") ?: "–")
+        views.setTextViewText(R.id.oficial_porcentaje, prefs.getString(KEY_OFICIAL_PCT, "") ?: "")
+
+        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 }

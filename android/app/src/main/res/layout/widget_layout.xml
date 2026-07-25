@@ -1,127 +1,168 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="#ccc">
+    android:layout_height="match_parent"
+    android:background="#25292e"
+    android:padding="12dp">
 
-    <!-- Main Content -->
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <!-- Основной контент -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp"
-        android:background="#ccc">
+        android:layout_centerVertical="true"
+        android:orientation="vertical">
 
         <!-- Dólar Blue -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="4dp">
+            android:paddingBottom="8dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
                 <TextView
                     android:id="@+id/blue_title"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Dólar Blue"
                     android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:textColor="#fff" />
+                    android:textSize="13sp"
+                    android:textColor="#ffffff" />
+
                 <TextView
                     android:id="@+id/blue_porcentaje"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0.00%"
-                    android:textSize="14sp"
-                    android:textColor="#3F51B5"
-                    android:layout_marginLeft="5dip" />
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
             </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="C "
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
+
                 <TextView
                     android:id="@+id/blue_compra"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0.00"
-                    android:textSize="14sp"
-                    android:textColor="#009688" />
+                    android:textSize="13sp"
+                    android:textColor="#00ff83" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  V "
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
 
                 <TextView
                     android:id="@+id/blue_venta"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0.00"
-                    android:textSize="14sp"
-                    android:textColor="#FF5722"
-                    android:layout_marginLeft="10dip" />
+                    android:textSize="13sp"
+                    android:textColor="#ff6b6b" />
             </LinearLayout>
-
         </LinearLayout>
 
-        <!-- Dólar Cripto -->
+        <!-- Separador -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#3a3f47"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Dólar Oficial -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:id="@+id/cripto_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dólar Cripto"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:textColor="#fff" />
-                <TextView
-                    android:id="@+id/cripto_porcentaje"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0.00%"
-                    android:textSize="14sp"
-                    android:textColor="#3F51B5"
-                    android:layout_marginLeft="5dip" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:id="@+id/cripto_compra"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0.00"
-                    android:textSize="14sp"
-                    android:textColor="#009688" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <TextView
-                    android:id="@+id/cripto_venta"
+                    android:id="@+id/oficial_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Dólar Oficial"
+                    android:textStyle="bold"
+                    android:textSize="13sp"
+                    android:textColor="#ffffff" />
+
+                <TextView
+                    android:id="@+id/oficial_porcentaje"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0.00"
-                    android:textSize="14sp"
-                    android:textColor="#FF5722"
-                    android:layout_marginLeft="10dip" />
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="C "
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
+
+                <TextView
+                    android:id="@+id/oficial_compra"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#00ff83" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  V "
+                    android:textSize="11sp"
+                    android:textColor="#808080" />
+
+                <TextView
+                    android:id="@+id/oficial_venta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#ff6b6b" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Refresh Button (Top Right Corner) -->
-    <Button
+    <!-- Кнопка обновления (открывает приложение) -->
+    <TextView
         android:id="@+id/refresh_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:text="⟳"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:background="?android:attr/selectableItemBackground"
-        android:textColor="#000"
+        android:gravity="center"
+        android:text="⟳"
+        android:textColor="#808080"
         android:textSize="18sp" />
+
 </RelativeLayout>
