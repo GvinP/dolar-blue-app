@@ -79,8 +79,8 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Separador -->
-        <View
+        <!-- Separador (TextView, no View — RemoteViews no soporta android.view.View plano) -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#3a3f47"
