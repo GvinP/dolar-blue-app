@@ -40,8 +40,12 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 
 - `src/api/supabase.ts` — lightweight REST client (plain `fetch`)
 - `src/api/quotes.ts` — `fetchLatestQuotes()` and `fetchQuoteHistory()`
-- `src/types.ts` — `QuoteCode`, `QuoteRow`
-- `src/HomeScreen.tsx` — latest quotes
+- `src/types.ts` — `QuoteCode`, `QuoteRow`, `QUOTE_CODE_LIST` (static list for pickers)
+- `src/settings.ts` — AsyncStorage-backed widget config (`slot1`/`slot2` codes) and push
+  preferences (watched code + threshold %)
+- `src/HomeScreen.tsx` — latest quotes; also pushes widget data to the native module
+  (Android) based on `settings.ts` config
+- `src/SettingsScreen.tsx` — pick widget slots + push notification code/threshold
 - `src/ChartScreen.tsx` — historical charts
 - `src/utils.ts` — chart label index calculation helpers
 
@@ -53,11 +57,16 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
   - `quotes_latest` — current value per quote code
   - `quotes_history` — time series (raw, every ~5 min)
   - `quotes_history_daily` — view: daily AVG aggregates per code (Argentina TZ)
-  - `push_tokens` — Expo push tokens (anon INSERT, service-role-only reads/updates)
-- RLS: public **reads**, service-role-only **writes** (except `push_tokens`: anon INSERT allowed).
+  - `push_tokens` — Expo push tokens + per-device preferences: `watch_code` (default `blue`),
+    `threshold_pct` (default `2.0`). Anon may INSERT and UPDATE only `watch_code`/`threshold_pct`
+    (column-level grant), scoped by already knowing the token (same trust model as the INSERT
+    policy — the token itself is the secret, not a separate user identity).
+- RLS: public **reads**, service-role-only **writes** (except `push_tokens`: anon INSERT allowed,
+  anon UPDATE of `watch_code`/`threshold_pct` allowed).
 - Edge Functions:
   - `scrape-quotes` — scrapes dolarhoy.com, upserts quotes, triggered by pg_cron every 5 min
-  - `send-notifications` — checks blue rate delta, sends Expo push if Δ ≥ 2%, triggered 1 min after scrape
+  - `send-notifications` — groups active tokens by `watch_code`, computes one delta per distinct
+    code, sends Expo push to tokens whose own `threshold_pct` is crossed; triggered 1 min after scrape
 - pg_cron jobs:
   - `scrape-dolar-quotes`: `*/5 * * * *`
   - `send-notifications-after-scrape`: `1,6,11,16,21,26,31,36,41,46,51,56 * * * *`
@@ -136,8 +145,10 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M2 — Expo migration (SDK 52 + EAS Build) ✅
 - M3 — client refactor ✅ (TanStack Query, UI states, Supabase history with argentinadatos fallback)
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
-- M5 — Android home screen widget ✅ (Blue + Oficial, SharedPreferences fed from HomeScreen after
-  Supabase fetch, no native scraping) — merged untested on-device; verify on next build
+- M5 — Android home screen widget ✅ (SharedPreferences fed from HomeScreen after Supabase
+  fetch, no native scraping) — verified on-device. Widget shows 1-2 user-configurable quote
+  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray).
+- M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 
 ## Communication

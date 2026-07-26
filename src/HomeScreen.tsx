@@ -6,21 +6,32 @@ import {
   RefreshControl,
   FlatList,
   ActivityIndicator,
-  NativeModules,
-  Platform,
+  AppState,
 } from 'react-native';
-import {useCallback, useEffect} from 'react';
-import {useNavigation} from '@react-navigation/native';
+import {useCallback, useEffect, useLayoutEffect} from 'react';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {fetchLatestQuotes} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
-
-const {WidgetModule} = NativeModules;
+import {pushWidgetUpdate} from './widget';
 
 export const HomeScreen = () => {
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, 'HomeScreen'>>();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => navigation.navigate('SettingsScreen')}
+          style={styles.settingsButton}
+          hitSlop={12}>
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation]);
 
   const {
     data: prices,
@@ -33,20 +44,31 @@ export const HomeScreen = () => {
     queryFn: fetchLatestQuotes,
   });
 
-  useEffect(() => {
-    if (!prices || Platform.OS !== 'android' || !WidgetModule) return;
-    const blue = prices.find(p => p.code === 'blue');
-    const oficial = prices.find(p => p.code === 'oficial');
-    if (!blue || !oficial) return;
-    WidgetModule.updateWidget({
-      blueBuy: blue.compra ?? '–',
-      blueSell: blue.venta ?? '–',
-      bluePct: blue.porcentaje ?? '',
-      oficialBuy: oficial.compra ?? '–',
-      oficialSell: oficial.venta ?? '–',
-      oficialPct: oficial.porcentaje ?? '',
-    });
+  const updateWidget = useCallback(async () => {
+    await pushWidgetUpdate(prices);
   }, [prices]);
+
+  // Котировки обновились — синхронизируем виджет
+  useEffect(() => {
+    updateWidget();
+  }, [updateWidget]);
+
+  // Вернулись из SettingsScreen — конфигурация слотов могла поменяться
+  useFocusEffect(
+    useCallback(() => {
+      updateWidget();
+    }, [updateWidget]),
+  );
+
+  // Приложение вернулось на передний план (в т.ч. по тапу на кнопку виджета) — тянем свежие данные
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        refetch();
+      }
+    });
+    return () => subscription.remove();
+  }, [refetch]);
 
   const porcentajeColor = useCallback(
     (porcentaje?: string) =>
@@ -182,5 +204,12 @@ const styles = StyleSheet.create({
   },
   porcentaje: {
     marginLeft: 'auto',
+  },
+  settingsButton: {
+    marginRight: 16,
+  },
+  settingsIcon: {
+    color: '#fff',
+    fontSize: 20,
   },
 });
