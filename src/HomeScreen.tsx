@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   NativeModules,
   Platform,
+  AppState,
 } from 'react-native';
 import {useCallback, useEffect, useLayoutEffect} from 'react';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
@@ -77,6 +78,16 @@ export const HomeScreen = () => {
       updateWidget();
     }, [updateWidget]),
   );
+
+  // Приложение вернулось на передний план (в т.ч. по тапу на кнопку виджета) — тянем свежие данные
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        refetch();
+      }
+    });
+    return () => subscription.remove();
+  }, [refetch]);
 
   const porcentajeColor = useCallback(
     (porcentaje?: string) =>
