@@ -43,6 +43,8 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 - `src/types.ts` — `QuoteCode`, `QuoteRow`, `QUOTE_CODE_LIST` (static list for pickers)
 - `src/settings.ts` — AsyncStorage-backed widget config (`slot1`/`slot2` codes) and push
   preferences (watched code + threshold %)
+- `src/widget.ts` — `pushWidgetUpdate()`, shared between `HomeScreen` and the headless task
+- `src/widgetRefreshTask.ts` — Headless JS task run by the widget's refresh button (Android)
 - `src/HomeScreen.tsx` — latest quotes; also pushes widget data to the native module
   (Android) based on `settings.ts` config
 - `src/SettingsScreen.tsx` — pick widget slots + push notification code/threshold
@@ -147,7 +149,13 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
 - M5 — Android home screen widget ✅ (SharedPreferences fed from HomeScreen after Supabase
   fetch, no native scraping) — verified on-device. Widget shows 1-2 user-configurable quote
-  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray).
+  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray). Refresh
+  button (⟳) runs a Headless JS task (`WidgetRefreshTaskService` → `index.js`
+  `registerHeadlessTask('WidgetRefresh', ...)` → `src/widgetRefreshTask.ts`) that re-fetches and
+  re-pushes to the widget with no Activity/UI — verified on-device. Tapping the rest of the
+  widget just opens the app, which also refetches on foreground (`AppState` listener in
+  `HomeScreen.tsx`) as a reliable fallback if the headless task ever gets killed by
+  battery-optimization on some OEM.
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 
