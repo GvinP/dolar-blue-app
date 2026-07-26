@@ -31,6 +31,7 @@ class WidgetModule(reactContext: ReactApplicationContext) :
             putString(WidgetProvider.KEY_SLOT2_BUY, data.getString("slot2Buy"))
             putString(WidgetProvider.KEY_SLOT2_SELL, data.getString("slot2Sell"))
             putString(WidgetProvider.KEY_SLOT2_PCT, data.getString("slot2Pct"))
+            putLong(WidgetProvider.KEY_UPDATED_AT, System.currentTimeMillis())
             apply()
         }
 

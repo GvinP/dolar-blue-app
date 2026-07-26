@@ -22,6 +22,7 @@ class WidgetProvider : AppWidgetProvider() {
         const val KEY_SLOT2_BUY = "slot2_buy"
         const val KEY_SLOT2_SELL = "slot2_sell"
         const val KEY_SLOT2_PCT = "slot2_pct"
+        const val KEY_UPDATED_AT = "updated_at"
 
         private const val COLOR_POSITIVE = "#00ff83" // mismo verde que en HomeScreen
         private const val COLOR_NEGATIVE = "#af2030" // mismo rojo que en HomeScreen
@@ -36,6 +37,16 @@ class WidgetProvider : AppWidgetProvider() {
                     else -> COLOR_NEGATIVE
                 },
             )
+        }
+
+        private fun formatUpdatedAt(updatedAt: Long): String {
+            if (updatedAt <= 0L) return ""
+            val minutes = (System.currentTimeMillis() - updatedAt) / 60_000
+            return when {
+                minutes < 1 -> "Actualizado ahora"
+                minutes < 60 -> "Actualizado hace ${minutes}m"
+                else -> "Actualizado hace ${minutes / 60}h"
+            }
         }
     }
 
@@ -90,6 +101,8 @@ class WidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.slot2_porcentaje, slot2Pct)
             views.setTextColor(R.id.slot2_porcentaje, pctColor(slot2Pct))
         }
+
+        views.setTextViewText(R.id.updated_at, formatUpdatedAt(prefs.getLong(KEY_UPDATED_AT, 0L)))
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
