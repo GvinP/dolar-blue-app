@@ -6,8 +6,6 @@ import {
   RefreshControl,
   FlatList,
   ActivityIndicator,
-  NativeModules,
-  Platform,
   AppState,
 } from 'react-native';
 import {useCallback, useEffect, useLayoutEffect} from 'react';
@@ -16,9 +14,7 @@ import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {fetchLatestQuotes} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
-import {getWidgetConfig} from './settings';
-
-const {WidgetModule} = NativeModules;
+import {pushWidgetUpdate} from './widget';
 
 export const HomeScreen = () => {
   const navigation =
@@ -49,22 +45,7 @@ export const HomeScreen = () => {
   });
 
   const updateWidget = useCallback(async () => {
-    if (!prices || Platform.OS !== 'android' || !WidgetModule) return;
-    const config = await getWidgetConfig();
-    const slot1 = prices.find(p => p.code === config.slot1);
-    const slot2 = config.slot2 ? prices.find(p => p.code === config.slot2) : undefined;
-    if (!slot1) return;
-    WidgetModule.updateWidget({
-      slot1Title: slot1.title,
-      slot1Buy: slot1.compra ?? '–',
-      slot1Sell: slot1.venta ?? '–',
-      slot1Pct: slot1.porcentaje ?? '',
-      slot2Visible: !!slot2,
-      slot2Title: slot2?.title ?? '',
-      slot2Buy: slot2?.compra ?? '–',
-      slot2Sell: slot2?.venta ?? '–',
-      slot2Pct: slot2?.porcentaje ?? '',
-    });
+    await pushWidgetUpdate(prices);
   }, [prices]);
 
   // Котировки обновились — синхронизируем виджет

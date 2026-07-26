@@ -53,14 +53,21 @@ class WidgetProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, R.layout.widget_layout)
 
-        // Tap anywhere → open app
+        // Tap en cualquier lugar del widget → abre la app
         val openApp = PendingIntent.getActivity(
             context, 0,
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         views.setOnClickPendingIntent(R.id.widget_root, openApp)
-        views.setOnClickPendingIntent(R.id.refresh_button, openApp)
+
+        // Botón ⟳ → dispara la headless task "WidgetRefresh" en background, sin abrir la app
+        val refresh = PendingIntent.getService(
+            context, 1,
+            Intent(context, WidgetRefreshTaskService::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        views.setOnClickPendingIntent(R.id.refresh_button, refresh)
 
         // Slot 1 (siempre visible)
         views.setTextViewText(R.id.slot1_title, prefs.getString(KEY_SLOT1_TITLE, "") ?: "")
