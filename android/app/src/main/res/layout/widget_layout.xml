@@ -143,4 +143,16 @@
         android:textColor="#808080"
         android:textSize="18sp" />
 
+    <!-- "Actualizado hace Xm" -->
+    <TextView
+        android:id="@+id/updated_at"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="6dp"
+        android:textSize="9sp"
+        android:textColor="#5a5f67" />
+
 </RelativeLayout>

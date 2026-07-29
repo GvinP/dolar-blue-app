@@ -11,8 +11,10 @@ rates. It shows live quotes (blue, oficial, MEP, CCL, etc.) and historical chart
 - **Live quotes** are scraped from dolarhoy.com (chosen for accuracy) by a Supabase
   Edge Function and stored in Supabase. The client reads from Supabase, **not** by
   scraping HTML directly.
-- **Historical data** currently comes from argentinadatos.com, used until our own
-  `quotes_history` table has accumulated enough data to replace it.
+- **Historical data**: `fetchQuoteHistory` in `src/api/quotes.ts` auto-switches to our own
+  `quotes_history_daily` once it has ≥30 days of data (`SUPABASE_HISTORY_MIN_DAYS`), falling
+  back to argentinadatos.com below that. Crossed the threshold ~2026-07-20 (36+ days of data
+  as of writing) — the client is now reading its own history, no code change needed.
 
 ## Tech stack
 
@@ -43,6 +45,8 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 - `src/types.ts` — `QuoteCode`, `QuoteRow`, `QUOTE_CODE_LIST` (static list for pickers)
 - `src/settings.ts` — AsyncStorage-backed widget config (`slot1`/`slot2` codes) and push
   preferences (watched code + threshold %)
+- `src/widget.ts` — `pushWidgetUpdate()`, shared between `HomeScreen` and the headless task
+- `src/widgetRefreshTask.ts` — Headless JS task run by the widget's refresh button (Android)
 - `src/HomeScreen.tsx` — latest quotes; also pushes widget data to the native module
   (Android) based on `settings.ts` config
 - `src/SettingsScreen.tsx` — pick widget slots + push notification code/threshold
@@ -123,6 +127,22 @@ Supabase Edge Function deploy (example):
 supabase functions deploy scrape-quotes
 ```
 
+## Testing
+
+`npm test` (jest) is **not** part of CI (`ci.yml` only runs lint/typecheck/android-build) — it's
+a dev-only smoke check. Uses the `jest-expo` preset (must track the installed Expo SDK major
+version, currently 52.x) plus `jest.setup.js` (mocks AsyncStorage, disables
+`react-native-screens` native components) — `react-native`'s own bare preset doesn't know about
+the Expo/`@react-navigation` ecosystem and fails to parse `.png`/ESM assets from those packages.
+
+Known issue: `__tests__/App.test.tsx` ("renders correctly") still crashes with "Element type is
+invalid" on the re-render after the mocked query settles — reproducible even with `HomeScreen`'s
+body swapped for a trivial `<Text/>`, so it's unrelated to any component code. Looks like a
+`@react-navigation/stack` + `react-native-screens` + `react-test-renderer` incompatibility in
+this exact dependency combination. Needs dedicated investigation (possibly
+`@testing-library/react-native` instead of raw `react-test-renderer`) — not chased further since
+it doesn't block CI.
+
 ## Deno / TypeScript note
 
 The repo is a Node project, so the Deno Edge Function code triggers
@@ -147,7 +167,14 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
 - M5 — Android home screen widget ✅ (SharedPreferences fed from HomeScreen after Supabase
   fetch, no native scraping) — verified on-device. Widget shows 1-2 user-configurable quote
-  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray).
+  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray). Refresh
+  button (⟳) runs a Headless JS task (`WidgetRefreshTaskService` → `index.js`
+  `registerHeadlessTask('WidgetRefresh', ...)` → `src/widgetRefreshTask.ts`) that re-fetches and
+  re-pushes to the widget with no Activity/UI — verified on-device. Tapping the rest of the
+  widget just opens the app, which also refetches on foreground (`AppState` listener in
+  `HomeScreen.tsx`) as a reliable fallback if the headless task ever gets killed by
+  battery-optimization on some OEM. Widget also shows "Actualizado hace Xm/h" (timestamp
+  written by `WidgetModule.updateWidget()` on every push, normal or headless).
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 

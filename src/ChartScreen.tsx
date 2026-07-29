@@ -34,6 +34,20 @@ export const ChartScreen = () => {
     return <PointerLabel items={items[0]} />;
   }, []);
 
+  // Escala el eje Y al rango real del período (min–max) en lugar de arrancar
+  // siempre en 0, que aplasta variaciones chicas contra el techo del gráfico.
+  const {yAxisOffset, maxValue} = useMemo(() => {
+    if (filteredPrices.length === 0) {
+      return {yAxisOffset: undefined, maxValue: undefined};
+    }
+    const values = filteredPrices.map(item => item.compra);
+    const rawMin = Math.min(...values);
+    const rawMax = Math.max(...values);
+    const padding = (rawMax - rawMin) * 0.1 || rawMax * 0.02 || 1;
+    const offset = Math.max(0, rawMin - padding);
+    return {yAxisOffset: offset, maxValue: rawMax - offset + padding};
+  }, [filteredPrices]);
+
   const data = useMemo<lineDataItem[]>(() => {
     if (filteredPrices.length === 0) {
       return [];
@@ -89,6 +103,8 @@ export const ChartScreen = () => {
           thickness={2}
           color="#00ff83"
           hideDataPoints
+          yAxisOffset={yAxisOffset}
+          maxValue={maxValue}
           yAxisTextStyle={{color: 'white'}}
           showVerticalLines
           verticalLinesColor="rgba(14,164,164,0.1)"
