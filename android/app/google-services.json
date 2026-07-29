@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "686195073210",
+    "project_id": "dolarblue-2aa6c",
+    "storage_bucket": "dolarblue-2aa6c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:686195073210:android:df3396127341c1343f6283",
+        "android_client_info": {
+          "package_name": "com.dolarblue"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBymBPOykYjwXLFH6AZRFiI7T4emqLyh2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:686195073210:android:291c70db3ac9fab13f6283",
+        "android_client_info": {
+          "package_name": "com.dolarblue.staging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBymBPOykYjwXLFH6AZRFiI7T4emqLyh2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
