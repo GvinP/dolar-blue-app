@@ -75,4 +75,4 @@ jobs:
         with:
           name: dolar-blue-staging-${{ github.event.pull_request.number }}
           path: android/app/build/outputs/apk/staging/app-staging.apk
-          retention-days: 7
+          retention-days: 3
