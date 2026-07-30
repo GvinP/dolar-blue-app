@@ -1,5 +1,5 @@
-import {useEffect} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {useEffect, useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {useFonts} from 'expo-font';
@@ -23,15 +23,36 @@ const headerOptions = {
   headerBackTitleVisible: false,
 };
 
+// Si la carga de fuentes tarda más que esto (o nunca resuelve), arrancamos
+// igual con la fuente de sistema — mejor eso que una pantalla negra permanente.
+const FONT_LOAD_TIMEOUT_MS = 4000;
+
 const App = () => {
-  const [fontsLoaded] = useFonts(fontAssets);
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     registerForPushNotifications();
   }, []);
 
+  useEffect(() => {
+    if (fontsLoaded) {
+      return;
+    }
+    const timer = setTimeout(() => setTimedOut(true), FONT_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded]);
+
+  if (fontError) {
+    return (
+      <View style={[styles.loading, styles.errorPadding]}>
+        <Text style={styles.errorText}>Error cargando fuentes:{'\n'}{String(fontError)}</Text>
+      </View>
+    );
+  }
+
   // Evita el flash con la fuente de sistema mientras cargan Figtree/Martian Mono
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !timedOut) {
     return <View style={styles.loading} />;
   }
 
@@ -66,6 +87,14 @@ const styles = StyleSheet.create({
   loading: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  errorPadding: {
+    padding: 20,
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 13,
   },
 });
 
