@@ -116,18 +116,17 @@ export async function syncPushPreferences(prefs: PushPreferences): Promise<void>
   }
 }
 
+// Vía Edge Function (service role) en vez de INSERT directo desde el cliente:
+// un upsert anon-directo por `token` requiere que anon pueda LEER la columna
+// token (Postgres lo necesita para arbitrar el conflicto de UNIQUE bajo RLS),
+// lo cual expondría todos los push tokens de todos los usuarios a cualquiera
+// con la anon key. La función valida el body y hace el upsert con service role.
 async function savePushToken(token: string, prefs: PushPreferences): Promise<void> {
   try {
-    const url = `${SUPABASE_URL}/rest/v1/push_tokens?on_conflict=token`;
+    const url = `${SUPABASE_URL}/functions/v1/register-push-token`;
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        // Si el token ya existe, actualiza watch_code/threshold_pct (permite re-sincronizar preferencias)
-        Prefer: 'resolution=merge-duplicates',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         token,
         watch_code: prefs.code,
