@@ -1,26 +1,17 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import {Pressable, StyleSheet, Text} from 'react-native';
+import {colors} from '../../assets/colors';
+import {FONT_FAMILY} from '../../assets/fonts';
+
 type Props = {
   isSelected: boolean;
   onFilterPress: () => void;
   filterName: string;
   filterWidth: number;
 };
-export const Filter = ({
-  filterName,
-  isSelected,
-  onFilterPress,
-  filterWidth,
-}: Props) => {
+export const Filter = ({filterName, isSelected, onFilterPress, filterWidth}: Props) => {
   return (
-    <Pressable
-      style={[styles.filterContainer, { width: filterWidth }]}
-      onPress={onFilterPress}
-    >
-      <Text
-        style={isSelected ? styles.selectedFilterTitle : styles.filterTitle}
-      >
-        {filterName}
-      </Text>
+    <Pressable style={[styles.filterContainer, {width: filterWidth}]} onPress={onFilterPress}>
+      <Text style={isSelected ? styles.selectedFilterTitle : styles.filterTitle}>{filterName}</Text>
     </Pressable>
   );
 };
@@ -28,18 +19,19 @@ export const Filter = ({
 const styles = StyleSheet.create({
   filterContainer: {
     alignItems: 'center',
-    paddingVertical: 5,
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   filterTitle: {
-    color: '#00ff83',
-    fontSize: 14,
-    marginBottom: 6,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.textMuted,
+    fontSize: 12,
     textAlign: 'center',
   },
   selectedFilterTitle: {
-    color: '#25292e',
-    fontSize: 14,
-    marginBottom: 6,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.accentInk,
+    fontSize: 12,
     textAlign: 'center',
   },
 });

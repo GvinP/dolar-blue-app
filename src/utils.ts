@@ -19,3 +19,15 @@ export const calculateLabelIndexes = (
 
   return indexes;
 };
+
+/** -0.32 → "-0.32%" · 0.8 → "0.80%" — mismo formato que produce la API (ver formatPct) */
+export const formatPercent = (value: number): string => `${value.toFixed(2)}%`;
+
+/** 1450 → "$1.450" · 1520.15 → "$1.520,15" — mismo formato que usa fetchLatestQuotes */
+export const formatPrice = (value: number): string => {
+  const hasDecimals = value % 1 !== 0;
+  return `$${value.toLocaleString('es-AR', {
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+};

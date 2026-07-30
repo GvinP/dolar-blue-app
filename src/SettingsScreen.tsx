@@ -10,6 +10,11 @@ import {
   WidgetConfig,
 } from './settings';
 import {syncPushPreferences} from './notifications';
+import {colors} from '../assets/colors';
+import {FONT_FAMILY} from '../assets/fonts';
+
+const STEP = 0.5;
+const clampThreshold = (value: number) => Math.max(0.5, Math.round(value * 10) / 10);
 
 export const SettingsScreen = () => {
   const [widgetConfig, setWidgetConfigState] = useState<WidgetConfig>({
@@ -50,6 +55,12 @@ export const SettingsScreen = () => {
     setSaved(false);
     setPushPrefsState(prev => ({...prev, code}));
   }, []);
+
+  const step = useCallback((delta: number) => {
+    setSaved(false);
+    const current = parseFloat(thresholdInput.replace(',', '.')) || 0;
+    setThresholdInput(String(clampThreshold(current + delta)));
+  }, [thresholdInput]);
 
   const handleSave = useCallback(async () => {
     const parsed = parseFloat(thresholdInput.replace(',', '.'));
@@ -126,18 +137,27 @@ export const SettingsScreen = () => {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Umbral de cambio (%)</Text>
-      <TextInput
-        style={styles.input}
-        value={thresholdInput}
-        onChangeText={text => {
-          setSaved(false);
-          setThresholdInput(text);
-        }}
-        keyboardType="decimal-pad"
-        placeholder="2"
-        placeholderTextColor="#808080"
-      />
+      <Text style={styles.sectionTitle}>Avisarme si cambia más de</Text>
+      <View style={styles.stepper}>
+        <Pressable onPress={() => step(-STEP)} hitSlop={8} style={styles.stepperBtn}>
+          <Text style={styles.stepperBtnText}>–</Text>
+        </Pressable>
+        <TextInput
+          style={[styles.stepperInput, styles.ticker]}
+          value={thresholdInput}
+          onChangeText={text => {
+            setSaved(false);
+            setThresholdInput(text);
+          }}
+          keyboardType="decimal-pad"
+          placeholder="2"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={styles.stepperPercent}>%</Text>
+        <Pressable onPress={() => step(STEP)} hitSlop={8} style={styles.stepperBtn}>
+          <Text style={styles.stepperBtnText}>+</Text>
+        </Pressable>
+      </View>
 
       <Pressable style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>{saved ? 'Guardado ✓' : 'Guardar'}</Text>
@@ -149,18 +169,23 @@ export const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#25292e',
+    backgroundColor: colors.background,
   },
   content: {
     padding: 16,
     paddingBottom: 32,
   },
+  ticker: {
+    fontFamily: FONT_FAMILY.ticker,
+  },
   sectionTitle: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 8,
+    color: colors.textMuted,
+    fontFamily: FONT_FAMILY.bold,
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginTop: 22,
+    marginBottom: 10,
   },
   chips: {
     flexDirection: 'row',
@@ -168,44 +193,69 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 100,
     borderWidth: 1,
-    borderColor: '#808080',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   chipSelected: {
-    backgroundColor: '#00ff83',
-    borderColor: '#00ff83',
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   chipText: {
-    color: '#fff',
-    fontSize: 13,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.text,
+    fontSize: 12.5,
   },
   chipTextSelected: {
-    color: '#25292e',
-    fontWeight: 'bold',
+    color: colors.accentInk,
   },
-  input: {
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#808080',
-    borderRadius: 8,
-    color: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: colors.border,
+    borderRadius: 14,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 4,
+  },
+  stepperBtn: {
+    width: 38,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperBtnText: {
+    color: colors.accent,
+    fontFamily: FONT_FAMILY.extraBold,
+    fontSize: 18,
+  },
+  stepperInput: {
+    minWidth: 44,
+    textAlign: 'right',
+    color: colors.text,
     fontSize: 15,
-    width: 100,
+    padding: 0,
+  },
+  stepperPercent: {
+    color: colors.text,
+    fontFamily: FONT_FAMILY.bold,
+    fontSize: 15,
+    marginRight: 4,
   },
   saveButton: {
     marginTop: 28,
-    backgroundColor: '#00ff83',
-    borderRadius: 8,
-    paddingVertical: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   saveButtonText: {
-    color: '#25292e',
-    fontWeight: 'bold',
+    color: colors.accentInk,
+    fontFamily: FONT_FAMILY.extraBold,
     fontSize: 15,
   },
 });
