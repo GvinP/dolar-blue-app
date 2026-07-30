@@ -1,5 +1,7 @@
-import {Text, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
 import {lineDataItem} from 'react-native-gifted-charts';
+import {colors} from '../../assets/colors';
+import {FONT_FAMILY} from '../../assets/fonts';
 
 type Props = {
   items: lineDataItem;
@@ -7,36 +9,44 @@ type Props = {
 
 export const PointerLabel = ({items}: Props) => {
   return (
-    <View
-      style={{
-        height: 90,
-        width: 100,
-        justifyContent: 'center',
-        marginTop: -20,
-        marginLeft: -40,
-      }}>
-      <Text
-        style={{
-          color: 'white',
-          fontSize: 14,
-          marginBottom: 6,
-          textAlign: 'center',
-        }}>
-        {items.dataPointText}
-      </Text>
-
-      <View
-        style={{
-          paddingHorizontal: 14,
-          paddingVertical: 6,
-          borderRadius: 16,
-          backgroundColor: '#252900',
-        }}>
-        <Text
-          style={{fontWeight: 'bold', textAlign: 'center', color: '#00ff83'}}>
-          {'$' + items.value}
-        </Text>
+    <View style={styles.container}>
+      <Text style={styles.date}>{items.dataPointText}</Text>
+      <View style={styles.bubble}>
+        <Text style={[styles.price, styles.ticker]}>{'$' + items.value}</Text>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    height: 90,
+    width: 100,
+    justifyContent: 'center',
+    marginTop: -20,
+    marginLeft: -40,
+  },
+  date: {
+    fontFamily: FONT_FAMILY.regular,
+    color: colors.textMuted,
+    fontSize: 11,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  bubble: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  ticker: {
+    fontFamily: FONT_FAMILY.ticker,
+  },
+  price: {
+    textAlign: 'center',
+    color: colors.accent,
+    fontSize: 14,
+  },
+});

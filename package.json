@@ -18,6 +18,8 @@
     "expo-asset": "~11.0.5",
     "expo-dev-client": "~5.0.0",
     "expo-device": "~7.0.2",
+    "expo-file-system": "~18.0.12",
+    "expo-font": "~13.0.4",
     "expo-notifications": "~0.29.14",
     "htmlparser2": "^10.0.0",
     "parse5": "^7.2.1",
