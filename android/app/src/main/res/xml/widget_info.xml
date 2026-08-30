@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  3x2 celdas (antes 4x2): el ancho completo de la grilla era desproporcionado
+  para dos cotizaciones. El alto sigue en 2 porque abajo de eso el contenido se
+  recorta — lo que achica la tarjeta visible es el wrap_content del layout.
+-->
 <appwidget-provider
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:targetCellWidth="4"
+    android:targetCellWidth="3"
     android:targetCellHeight="2"
-    android:minWidth="180dp"
-    android:minHeight="110dp"
+    android:minWidth="150dp"
+    android:minHeight="150dp"
+    android:minResizeWidth="140dp"
+    android:minResizeHeight="150dp"
+    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_layout"
+    android:previewLayout="@layout/widget_layout"
     android:widgetCategory="home_screen"
     android:description="@string/widget_description" />

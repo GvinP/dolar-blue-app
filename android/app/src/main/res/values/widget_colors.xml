@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Espejo de la paleta del cliente (assets/colors/colors.ts). Si se cambia allá,
+  hay que cambiarla acá también — RemoteViews no puede leer el bundle de JS.
+-->
+<resources>
+    <color name="widget_surface">#1F1912</color>
+    <color name="widget_surface_elevated">#2A2116</color>
+    <color name="widget_border">#382C1C</color>
+    <color name="widget_text">#F5EFE3</color>
+    <color name="widget_text_muted">#A0937A</color>
+    <color name="widget_accent">#F0A63C</color>
+    <color name="widget_up">#57BD78</color>
+    <color name="widget_down">#E06152</color>
+    <!-- rgba(...,0.16) → alpha 0x29 -->
+    <color name="widget_up_bg">#2957BD78</color>
+    <color name="widget_down_bg">#29E06152</color>
+</resources>

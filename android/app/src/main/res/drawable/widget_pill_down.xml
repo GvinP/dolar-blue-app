@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Equivalente a DeltaPill (styles.pill + styles.down). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_down_bg" />
+    <corners android:radius="100dp" />
+</shape>

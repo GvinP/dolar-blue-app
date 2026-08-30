@@ -167,7 +167,7 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
 - M5 — Android home screen widget ✅ (SharedPreferences fed from HomeScreen after Supabase
   fetch, no native scraping) — verified on-device. Widget shows 1-2 user-configurable quote
-  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray). Refresh
+  codes (`SettingsScreen`, default Blue + Oficial), delta as a green/red pill. Refresh
   button (⟳) runs a Headless JS task (`WidgetRefreshTaskService` → `index.js`
   `registerHeadlessTask('WidgetRefresh', ...)` → `src/widgetRefreshTask.ts`) that re-fetches and
   re-pushes to the widget with no Activity/UI — verified on-device. Tapping the rest of the
@@ -175,6 +175,13 @@ The repo is a Node project, so the Deno Edge Function code triggers
   `HomeScreen.tsx`) as a reliable fallback if the headless task ever gets killed by
   battery-optimization on some OEM. Widget also shows "Actualizado hace Xm/h" (timestamp
   written by `WidgetModule.updateWidget()` on every push, normal or headless).
+
+  ⚠️ The widget can't read the JS bundle, so its design tokens are **duplicated** natively:
+  `assets/colors/colors.ts` → `res/values/widget_colors.xml`, and `assets/fonts/*.ttf` →
+  `res/font/*.ttf` (lowercase names, referenced via `android:fontFamily`). Changing the app
+  palette or fonts without mirroring them there silently leaves the widget on the old design.
+  Sizing lives in `res/xml/widget_info.xml` (3x2 cells); the card itself is `wrap_content`
+  inside a `match_parent` root, so it shrinks to its content instead of stretching to the cell.
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 
