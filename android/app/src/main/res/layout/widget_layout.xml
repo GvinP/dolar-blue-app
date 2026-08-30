@@ -89,8 +89,13 @@
                 android:textColor="@color/widget_text_muted" />
         </LinearLayout>
 
-        <!-- ── Separador (oculto si slot2 no está configurado) ── -->
-        <View
+        <!-- ── Separador (oculto si slot2 no está configurado) ──
+             TextView y no View a propósito: RemoteViews sólo infla clases marcadas
+             con @RemoteView (FrameLayout, LinearLayout, TextView, ImageView…), y
+             android.view.View no está en esa lista. Cambiarlo por <View> hace que el
+             launcher falle con "Can't load widget" en tiempo de ejecución — el build
+             pasa igual, así que no hay red de seguridad más que este comentario. -->
+        <TextView
             android:id="@+id/slot2_separator"
             android:layout_width="match_parent"
             android:layout_height="1dp"

@@ -176,6 +176,12 @@ The repo is a Node project, so the Deno Edge Function code triggers
   battery-optimization on some OEM. Widget also shows "Actualizado hace Xm/h" (timestamp
   written by `WidgetModule.updateWidget()` on every push, normal or headless).
 
+  ⚠️ `widget_layout.xml` may only use classes annotated `@RemoteView` — `FrameLayout`,
+  `LinearLayout`, `RelativeLayout`, `GridLayout`, `TextView`, `ImageView`, `Button`,
+  `ProgressBar`, `ViewStub`, and the adapter views. Plain `<View>` is **not** on that list:
+  using one (e.g. as a 1dp divider — use a `TextView` instead) compiles and passes CI, then
+  fails at runtime with the launcher showing "Can't load widget". Lint won't catch it either.
+
   ⚠️ The widget can't read the JS bundle, so its design tokens are **duplicated** natively:
   `assets/colors/colors.ts` → `res/values/widget_colors.xml`, and `assets/fonts/*.ttf` →
   `res/font/*.ttf` (lowercase names, referenced via `android:fontFamily`). Changing the app
