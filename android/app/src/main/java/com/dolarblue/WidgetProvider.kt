@@ -133,9 +133,10 @@ class WidgetProvider : AppWidgetProvider() {
     }
 
     /**
-     * Espejo de components/DeltaPill.tsx: "-0.32%" → "▼ 0.32%" en rojo, cualquier
-     * otra cosa → "▲ …" en verde (sí, incluido el 0%, igual que en la app). Sin
-     * dato la pill directamente no se dibuja.
+     * Como DeltaPill.tsx pero sin la flecha: a 2 celdas de ancho el ▲/▼ cuesta unos
+     * 10dp que hacen falta para que el nombre no se corte, y la dirección ya la dan
+     * el color y el signo — "-0.32%" en rojo, "0.80%" en verde (el 0% cuenta como
+     * suba, igual que en la app). Sin dato la pill no se dibuja.
      */
     private fun renderPill(
         context: Context,
@@ -150,7 +151,7 @@ class WidgetProvider : AppWidgetProvider() {
         }
         val isDown = pct.startsWith("-")
         views.setViewVisibility(pillId, View.VISIBLE)
-        views.setTextViewText(pillId, "${if (isDown) "▼" else "▲"} ${pct.replace("-", "")}")
+        views.setTextViewText(pillId, pct)
         views.setTextColor(
             pillId,
             context.getColor(if (isDown) R.color.widget_down else R.color.widget_up),
