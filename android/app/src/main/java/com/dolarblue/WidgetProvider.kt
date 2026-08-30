@@ -26,8 +26,14 @@ class WidgetProvider : AppWidgetProvider() {
         /** widget.ts manda esto cuando la cotización no tiene ese lado (p.ej. tarjeta). */
         private const val EMPTY_VALUE = "–"
 
+        /** Igual que en las filas de HomeScreen: a 2 celdas de ancho "Dólar" no aporta. */
+        private val DOLAR_PREFIX = Regex("^Dólar\\s*", RegexOption.IGNORE_CASE)
+
         private fun String?.orAbsent(): String? =
             this?.trim()?.takeIf { it.isNotEmpty() && it != EMPTY_VALUE }
+
+        private fun shortTitle(title: String?): String =
+            title?.trim()?.replace(DOLAR_PREFIX, "").orEmpty()
 
         private fun formatUpdatedAt(updatedAt: Long): String {
             if (updatedAt <= 0L) return ""
@@ -71,11 +77,11 @@ class WidgetProvider : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.refresh_button, refresh)
 
         // Slot 1 (siempre visible)
-        views.setTextViewText(R.id.slot1_title, prefs.getString(KEY_SLOT1_TITLE, "") ?: "")
+        views.setTextViewText(R.id.slot1_title, shortTitle(prefs.getString(KEY_SLOT1_TITLE, "")))
         renderPrice(
             views,
             R.id.slot1_price,
-            R.id.slot1_sub,
+            R.id.slot1_tag,
             buy = prefs.getString(KEY_SLOT1_BUY, null),
             sell = prefs.getString(KEY_SLOT1_SELL, null),
         )
@@ -87,11 +93,11 @@ class WidgetProvider : AppWidgetProvider() {
         views.setViewVisibility(R.id.slot2_separator, slot2Visibility)
         views.setViewVisibility(R.id.slot2_block, slot2Visibility)
         if (slot2Visible) {
-            views.setTextViewText(R.id.slot2_title, prefs.getString(KEY_SLOT2_TITLE, "") ?: "")
+            views.setTextViewText(R.id.slot2_title, shortTitle(prefs.getString(KEY_SLOT2_TITLE, "")))
             renderPrice(
                 views,
                 R.id.slot2_price,
-                R.id.slot2_sub,
+                R.id.slot2_tag,
                 buy = prefs.getString(KEY_SLOT2_BUY, null),
                 sell = prefs.getString(KEY_SLOT2_SELL, null),
             )
@@ -104,29 +110,25 @@ class WidgetProvider : AppWidgetProvider() {
     }
 
     /**
-     * Misma jerarquía que el `hero` de HomeScreen: la venta manda y la compra va
-     * como subtítulo apagado. Cuando sólo hay compra (tarjeta), esa ocupa el lugar
-     * principal y el subtítulo pasa a ser el tag "COMPRA" — igual que `rowTag` en
-     * la lista, para que no se lea como precio de venta.
+     * Mismo renglón que las filas de HomeScreen: manda la venta y la compra no se
+     * muestra — a 2 celdas de ancho no hay lugar, y es el lado que la gente mira.
+     * Cuando no hay venta (tarjeta) la compra ocupa ese lugar y debajo aparece el
+     * tag "compra", igual que `rowTag`, para que no se lea como precio de venta.
      */
     private fun renderPrice(
         views: RemoteViews,
         priceId: Int,
-        subId: Int,
+        tagId: Int,
         buy: String?,
         sell: String?,
     ) {
         val venta = sell.orAbsent()
         val compra = buy.orAbsent()
         views.setTextViewText(priceId, venta ?: compra ?: EMPTY_VALUE)
-        val sub = when {
-            venta != null && compra != null -> "Compra $compra"
-            venta == null && compra != null -> "COMPRA"
-            else -> null
-        }
-        views.setViewVisibility(subId, if (sub == null) View.GONE else View.VISIBLE)
-        if (sub != null) {
-            views.setTextViewText(subId, sub)
+        val showTag = venta == null && compra != null
+        views.setViewVisibility(tagId, if (showTag) View.VISIBLE else View.GONE)
+        if (showTag) {
+            views.setTextViewText(tagId, "compra")
         }
     }
 

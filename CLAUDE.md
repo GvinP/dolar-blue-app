@@ -180,8 +180,12 @@ The repo is a Node project, so the Deno Edge Function code triggers
   `assets/colors/colors.ts` → `res/values/widget_colors.xml`, and `assets/fonts/*.ttf` →
   `res/font/*.ttf` (lowercase names, referenced via `android:fontFamily`). Changing the app
   palette or fonts without mirroring them there silently leaves the widget on the old design.
-  Sizing lives in `res/xml/widget_info.xml` (3x2 cells); the card itself is `wrap_content`
+  Sizing lives in `res/xml/widget_info.xml` (2x1 cells); the card itself is `wrap_content`
   inside a `match_parent` root, so it shrinks to its content instead of stretching to the cell.
+  Two sizing systems coexist there: Android 12+ reads `targetCellWidth`/`targetCellHeight`,
+  older launchers derive cells from `minWidth`/`minHeight` via `ceil((dp + 30) / 70)` — set
+  both or the widget comes out the wrong size on one of them. At 2x1 each quote is a single
+  row (name · venta · pill) mirroring `renderItem` in `HomeScreen`; `compra` is not shown.
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 

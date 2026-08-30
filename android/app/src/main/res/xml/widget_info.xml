@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  3x2 celdas (antes 4x2): el ancho completo de la grilla era desproporcionado
-  para dos cotizaciones. El alto sigue en 2 porque abajo de eso el contenido se
-  recorta — lo que achica la tarjeta visible es el wrap_content del layout.
+  2x1 celdas, como en las primeras versiones.
+
+  Ojo con los dos sistemas de medida que conviven acá: Android 12+ (API 31) toma
+  targetCellWidth/targetCellHeight, mientras que los launchers viejos derivan las
+  celdas de minWidth/minHeight con ceil((dp + 30) / 70) — por eso 110dp/40dp, que
+  es lo que da 2x1 en esa fórmula. Declarar sólo minWidth/minHeight grandes fue lo
+  que en su momento dejó el widget desproporcionado en un launcher moderno.
+
+  El alto real de una celda (~100dp en One UI) es mayor que el contenido (~87dp),
+  y la tarjeta es wrap_content, así que sobra un poco de aire en vez de recortarse.
 -->
 <appwidget-provider
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:targetCellWidth="3"
-    android:targetCellHeight="2"
-    android:minWidth="150dp"
-    android:minHeight="150dp"
-    android:minResizeWidth="140dp"
-    android:minResizeHeight="150dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_layout"
