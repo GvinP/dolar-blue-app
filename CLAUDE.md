@@ -185,7 +185,12 @@ The repo is a Node project, so the Deno Edge Function code triggers
   Two sizing systems coexist there: Android 12+ reads `targetCellWidth`/`targetCellHeight`,
   older launchers derive cells from `minWidth`/`minHeight` via `ceil((dp + 30) / 70)` — set
   both or the widget comes out the wrong size on one of them. At 2x1 each quote is a single
-  row (name · venta · pill) mirroring `renderItem` in `HomeScreen`; `compra` is not shown.
+  row (name · price · pill) mirroring `renderItem` in `HomeScreen` — only one side of the
+  price fits, picked by a venta/compra chip **on the widget itself** (tap → broadcast
+  `TOGGLE_SIDE` to `WidgetProvider`, which flips `KEY_SIDE` and re-renders). That key is the
+  one pref `WidgetModule` must never write: it is owned by the widget, and a push from JS
+  would overwrite the user's choice on every scrape. The small tag under a price appears only
+  when the shown side isn't the chosen one (tarjeta has no `venta`).
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 

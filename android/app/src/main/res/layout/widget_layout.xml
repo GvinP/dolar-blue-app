@@ -162,13 +162,32 @@
                 android:textColor="@color/widget_text_muted" />
         </LinearLayout>
 
-        <!-- ── Pie: "Actualizado hace Xm" + botón de refresh ── -->
+        <!-- ── Pie: selector venta/compra + "Actualizado hace Xm" + refresh ── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
+
+            <!-- Toca para alternar qué lado del precio se muestra. Vive acá y no en
+                 Ajustes porque es lo que se cambia de a ratos, sin abrir la app. -->
+            <TextView
+                android:id="@+id/side_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/widget_side_chip"
+                android:paddingStart="7dp"
+                android:paddingEnd="7dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:fontFamily="@font/figtree_bold"
+                android:textAllCaps="true"
+                android:letterSpacing="0.06"
+                android:maxLines="1"
+                android:textSize="8sp"
+                android:textColor="@color/widget_text_muted" />
 
             <TextView
                 android:id="@+id/updated_at"
@@ -181,7 +200,8 @@
                 android:textSize="9sp"
                 android:textColor="@color/widget_text_muted" />
 
-            <!-- Ámbar: es la única acción del widget, mismo rol que el accent en la app. -->
+            <!-- Ámbar: la acción principal. El selector de al lado queda en gris
+                 justamente para no competir con éste. -->
             <TextView
                 android:id="@+id/refresh_button"
                 android:layout_width="22dp"
