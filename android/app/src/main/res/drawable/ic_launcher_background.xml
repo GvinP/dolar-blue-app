@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Тёплый янтарный градиент из палитры "casa de cambio" (assets/colors/colors.ts).
+     Тот же переход, что рисует scripts/generate-icons.py для legacy-мипмапов. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="#F7B85C"
+        android:endColor="#DB8A28" />
+</shape>

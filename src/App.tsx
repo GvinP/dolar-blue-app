@@ -64,7 +64,7 @@ const App = () => {
           <Stack.Screen
             name="HomeScreen"
             component={HomeScreen}
-            options={{title: 'DólarBlue'}}
+            options={{title: 'Dólar Blue'}}
           />
           <Stack.Screen
             name="ChartScreen"

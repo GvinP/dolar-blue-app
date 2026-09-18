@@ -105,9 +105,27 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 
 `blue`, `oficial`, `mep`, `ccl`, `tarjeta`, and crypto variants (`cripto` / `digital` / `usdc`).
 
-- `tarjeta` consistently returns `sell = null` — this is expected, not a bug.
+- `tarjeta` consistently returns `sell = null` — the site shows a single price for it.
+  Note that price is labelled **Venta** on dolarhoy but lands in `buy`, because `parseHtml`
+  takes `.val` nodes positionally. Not fixed yet: `quotes_history_daily` filters
+  `WHERE buy IS NOT NULL` and the charts plot `compra`, so moving it to `sell` would blank
+  the tarjeta chart — needs the view changed in the same step.
 - `mayorista` is currently absent from dolarhoy; the scraper will pick it up
   automatically if it reappears.
+
+## Иконка и название
+
+- Отображаемое имя — **«Dólar Blue»** (с пробелом). Живёт в четырёх местах, менять все сразу:
+  `app.json` (`expo.name`), `android/.../values/strings.xml` (`app_name`),
+  `ios/DolarBlue/Info.plist` (`CFBundleDisplayName`), `src/App.tsx` (заголовок экрана).
+  `expo.slug` менять **нельзя** — к нему привязан EAS `projectId`.
+- Иконки генерируются из палитры: `pip install Pillow && python3 scripts/generate-icons.py`.
+  Скрипт пишет `assets/icon.png` + `assets/adaptive-icon.png`, android-мипмапы
+  (legacy `ic_launcher`/`ic_launcher_round` + `ic_launcher_foreground` для adaptive)
+  и заполняет `ios/.../AppIcon.appiconset`. Правки вносить в скрипт, не в PNG.
+- Проект в bare-workflow, нативные папки закоммичены, поэтому одного `app.json` мало —
+  иконки лежат в `android/`/`ios/` как настоящие ресурсы. Значения в `app.json`
+  синхронизированы со скриптом, так что `expo prebuild` даст тот же результат.
 
 ## Environment variables
 
