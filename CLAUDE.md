@@ -69,11 +69,33 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
   anon UPDATE of `watch_code`/`threshold_pct` allowed).
 - Edge Functions:
   - `scrape-quotes` — scrapes dolarhoy.com, upserts quotes, triggered by pg_cron every 5 min
+    (number/title parsing lives in `supabase/functions/scrape-quotes/parse.ts`, covered by
+    `parse_test.ts` — run with `deno test supabase/functions/scrape-quotes/`)
   - `send-notifications` — groups active tokens by `watch_code`, computes one delta per distinct
     code, sends Expo push to tokens whose own `threshold_pct` is crossed; triggered 1 min after scrape
 - pg_cron jobs:
   - `scrape-dolar-quotes`: `*/5 * * * *`
   - `send-notifications-after-scrape`: `1,6,11,16,21,26,31,36,41,46,51,56 * * * *`
+
+### ⚠️ Scraper gotchas
+
+- dolarhoy prices are **es-AR formatted**: dot groups thousands, comma is the decimal
+  (`$1.530,20` = 1530.2). Percentages on the same page use a **dot** decimal (`-0.33%`).
+  `parseNum` decides per string (a lone dot followed by exactly 3 digits = thousands).
+  On 2026-09-18 19:15 UTC the site switched from `1530,20` to `$1.530,20` and the old
+  `.replace(",", ".")` turned every price into ~1.53 — only `blue` survived, via the
+  argentinadatos cross-check. If quotes ever look like pocket change again, look here first.
+- `isPlausibleRate` rejects anything below 100 ARS/USD, so a repeat of that class of
+  breakage marks every code broken and falls back to argentinadatos instead of writing junk.
+- `.val` nodes are read positionally (first = compra, second = venta). A tile with a
+  **single** price is resolved by its label instead — `pickSingleValueField`. Without that,
+  tarjeta's Venta silently became a compra.
+- Three things move together if that ever changes: the scraper, the
+  `quotes_history_daily` view (`WHERE buy IS NOT NULL OR sell IS NOT NULL` — it must not
+  drop sell-only rows), and `historyValue` in `src/api/quotes.ts`, which the charts use to
+  pick `compra ?? venta` per day so tarjeta's series stays continuous across the switch.
+- The view lives only in Supabase — this repo has no `supabase/migrations/`, so schema
+  changes are applied through the dashboard/MCP and documented here.
 
 ### ⚠️ Schema gotchas (read before writing any query)
 
@@ -92,9 +114,25 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 
 `blue`, `oficial`, `mep`, `ccl`, `tarjeta`, and crypto variants (`cripto` / `digital` / `usdc`).
 
-- `tarjeta` consistently returns `sell = null` — this is expected, not a bug.
+- `tarjeta` has a single price on dolarhoy, labelled **Venta**, so it lands in `sell`
+  and `buy` stays null (the other codes are the other way round — see below).
+  Fixed 2026-09-18; rows captured before that have the value in `buy` instead.
 - `mayorista` is currently absent from dolarhoy; the scraper will pick it up
   automatically if it reappears.
+
+## Иконка и название
+
+- Отображаемое имя — **«Dólar Blue»** (с пробелом). Живёт в четырёх местах, менять все сразу:
+  `app.json` (`expo.name`), `android/.../values/strings.xml` (`app_name`),
+  `ios/DolarBlue/Info.plist` (`CFBundleDisplayName`), `src/App.tsx` (заголовок экрана).
+  `expo.slug` менять **нельзя** — к нему привязан EAS `projectId`.
+- Иконки генерируются из палитры: `pip install Pillow && python3 scripts/generate-icons.py`.
+  Скрипт пишет `assets/icon.png` + `assets/adaptive-icon.png`, android-мипмапы
+  (legacy `ic_launcher`/`ic_launcher_round` + `ic_launcher_foreground` для adaptive)
+  и заполняет `ios/.../AppIcon.appiconset`. Правки вносить в скрипт, не в PNG.
+- Проект в bare-workflow, нативные папки закоммичены, поэтому одного `app.json` мало —
+  иконки лежат в `android/`/`ios/` как настоящие ресурсы. Значения в `app.json`
+  синхронизированы со скриптом, так что `expo prebuild` даст тот же результат.
 
 ## Environment variables
 

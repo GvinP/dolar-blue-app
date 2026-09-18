@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "DolarBlue",
+    "name": "Dólar Blue",
     "slug": "DolarBlue",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,11 @@
       "android"
     ],
     "android": {
-      "package": "com.dolarblue"
+      "package": "com.dolarblue",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E9A142"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.dolarblue",
@@ -24,6 +28,7 @@
     "plugins": [
       "expo-asset",
       "expo-notifications"
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

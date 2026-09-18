@@ -1,5 +1,13 @@
 import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.48/deno-dom-wasm.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  inferCode,
+  isPlausiblePct,
+  isPlausibleRate,
+  parseNum,
+  pickSingleValueField,
+  TITLE_MAP,
+} from "./parse.ts";
 
 // ─── Supabase client (env vars доступны в Edge Functions автоматически) ───────
 const supabase = createClient(
@@ -24,18 +32,6 @@ interface Quote {
   source: "dolarhoy" | "argentinadatos";
 }
 
-// ─── Маппинг: ключевые слова в title → внутренний code ────────────────────────
-// Порядок важен: более специфичные правила должны идти раньше
-const TITLE_MAP: Array<{ keywords: string[]; code: string; name: string }> = [
-  { keywords: ["blue"],                        code: "blue",      name: "Dólar Blue"      },
-  { keywords: ["bolsa", "mep"],               code: "mep",       name: "Dólar MEP"       },
-  { keywords: ["contado con liqui", "ccl"],   code: "ccl",       name: "Dólar CCL"       },
-  { keywords: ["tarjeta", "turista"],          code: "tarjeta",   name: "Dólar Tarjeta"   },
-  { keywords: ["cripto", "digital", "usdc"],   code: "cripto",    name: "Dólar Cripto"    },
-  { keywords: ["mayorista"],                   code: "mayorista", name: "Dólar Mayorista" },
-  { keywords: ["oficial"],                     code: "oficial",   name: "Dólar Oficial"   },
-];
-
 // Типы argentinadatos, соответствующие нашим кодам (для fallback и кросс-проверки)
 const AD_TIPO: Record<string, string> = {
   blue:      "blue",
@@ -45,31 +41,6 @@ const AD_TIPO: Record<string, string> = {
   tarjeta:   "tarjeta",
   mayorista: "mayorista",
 };
-
-// ─── Вспомогательные функции ──────────────────────────────────────────────────
-function parseNum(str?: string): number | null {
-  if (!str) return null;
-  // Убираем все символы кроме цифр, запятой, точки и минуса
-  const cleaned = str.replace(/[^\d,.\-]/g, "").replace(",", ".");
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
-}
-
-function isPlausible(v: number | null): boolean {
-  // null допустим (просто нет данных), но число должно быть положительным и в разумном диапазоне
-  if (v === null) return true;
-  return v > 0 && v < 100_000;
-}
-
-function inferCode(title: string): { code: string; name: string } | null {
-  const lower = title.toLowerCase();
-  for (const entry of TITLE_MAP) {
-    if (entry.keywords.some(k => lower.includes(k))) {
-      return { code: entry.code, name: entry.name };
-    }
-  }
-  return null;
-}
 
 // ─── Парсинг dolarhoy.com (логика из utils.ts, переписанная под deno-dom) ─────
 async function fetchDolarhoy(): Promise<RawQuote[]> {
@@ -104,8 +75,16 @@ function parseHtml(html: string): RawQuote[] {
 
     // Аналог: findAll(el => el.attribs.class === 'val', tile)
     const valNodes = tile.querySelectorAll(".val");
-    const compra    = valNodes[0]?.textContent?.trim();
-    const venta     = valNodes[1]?.textContent?.trim();
+    let compra = valNodes[0]?.textContent?.trim();
+    let venta  = valNodes[1]?.textContent?.trim();
+
+    // У плитки с одной ценой поле определяет подпись, а не позиция — см.
+    // pickSingleValueField (иначе venta у tarjeta уезжает в compra).
+    if (valNodes.length === 1 &&
+        pickSingleValueField(tile.textContent ?? "") === "venta") {
+      venta = compra;
+      compra = undefined;
+    }
     // .var-porcentaje иногда содержит SVG-стрелку (chevron) с инлайновым <style>,
     // чей CSS-текст (".is-7 ... .st12{fill:#005c35}") склеивается с textContent.
     // Поэтому вытаскиваем число регэкспом по innerHTML, а не берём textContent целиком.
@@ -172,14 +151,22 @@ Deno.serve(async (_req) => {
         continue;
       }
 
-      const buy       = parseNum(raw.compra);
-      const sell      = parseNum(raw.venta);
-      const changePct = parseNum(raw.porcentaje);
+      const buy      = parseNum(raw.compra);
+      const sell     = parseNum(raw.venta);
+      let changePct  = parseNum(raw.porcentaje);
 
-      if (!isPlausible(buy) || !isPlausible(sell)) {
+      if (!isPlausibleRate(buy) || !isPlausibleRate(sell)) {
+        // Сюда попадает поломка вида «сменился формат числа на сайте»:
+        // лучше уйти в fallback на argentinadatos, чем записать мусор в базу.
         console.warn(`Implausible values for ${mapped.code}: buy=${buy} sell=${sell} — marking broken`);
         broken.add(mapped.code);
         continue;
+      }
+
+      // Процент — косметика: кривое значение просто обнуляем, котировку не бракуем
+      if (!isPlausiblePct(changePct)) {
+        console.warn(`Implausible change_pct for ${mapped.code}: ${changePct} — dropping it`);
+        changePct = null;
       }
 
       quotes.push({ code: mapped.code, name: mapped.name, buy, sell, change_pct: changePct, source: "dolarhoy" });

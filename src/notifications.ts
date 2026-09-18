@@ -28,7 +28,7 @@ export async function registerForPushNotifications(): Promise<void> {
   // Для Android нужен notification channel
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'DolarBlue',
+      name: 'Dólar Blue',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
     });

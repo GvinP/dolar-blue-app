@@ -67,10 +67,21 @@ export const fetchLatestQuotes = async (): Promise<Cotizacion[]> => {
 };
 
 export type HistoryPrice = {
-  compra: number;
-  venta: number;
+  compra: number | null;
+  venta: number | null;
   fecha: string; // "YYYY-MM-DD"
 };
+
+/**
+ * Precio a graficar para un día.
+ *
+ * Los gráficos siempre usaron `compra`, pero `tarjeta` publica un único precio
+ * que es de **venta**: sus filas nuevas traen `compra = null`. Preferimos
+ * `compra` para no alterar el resto de los códigos y caemos a `venta` para que
+ * la serie de tarjeta siga siendo continua a ambos lados del cambio.
+ */
+export const historyValue = (price: HistoryPrice): number | null =>
+  price.compra ?? price.venta;
 
 /**
  * Fetch daily-aggregated history from Supabase quotes_history_daily view.
