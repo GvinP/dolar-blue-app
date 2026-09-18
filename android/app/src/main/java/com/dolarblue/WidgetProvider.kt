@@ -112,8 +112,12 @@ class WidgetProvider : AppWidgetProvider() {
     /**
      * Mismo renglón que las filas de HomeScreen: manda la venta y la compra no se
      * muestra — a 2 celdas de ancho no hay lugar, y es el lado que la gente mira.
-     * Cuando no hay venta (tarjeta) la compra ocupa ese lugar y debajo aparece el
-     * tag "compra", igual que `rowTag`, para que no se lea como precio de venta.
+     * Cuando un código no trae venta, la compra ocupa ese lugar y debajo aparece
+     * el tag "compra", igual que `rowTag`, para que no se lea como precio de venta.
+     *
+     * Ese caso era tarjeta, pero ya no: desde que el scraper resuelve por etiqueta
+     * su único precio va a `sell`, así que cae por la rama normal y sin tag. Hoy
+     * ningún código publica sólo compra — el fallback queda como red de seguridad.
      */
     private fun renderPrice(
         views: RemoteViews,
