@@ -69,11 +69,24 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
   anon UPDATE of `watch_code`/`threshold_pct` allowed).
 - Edge Functions:
   - `scrape-quotes` — scrapes dolarhoy.com, upserts quotes, triggered by pg_cron every 5 min
+    (number/title parsing lives in `supabase/functions/scrape-quotes/parse.ts`, covered by
+    `parse_test.ts` — run with `deno test supabase/functions/scrape-quotes/`)
   - `send-notifications` — groups active tokens by `watch_code`, computes one delta per distinct
     code, sends Expo push to tokens whose own `threshold_pct` is crossed; triggered 1 min after scrape
 - pg_cron jobs:
   - `scrape-dolar-quotes`: `*/5 * * * *`
   - `send-notifications-after-scrape`: `1,6,11,16,21,26,31,36,41,46,51,56 * * * *`
+
+### ⚠️ Scraper gotchas
+
+- dolarhoy prices are **es-AR formatted**: dot groups thousands, comma is the decimal
+  (`$1.530,20` = 1530.2). Percentages on the same page use a **dot** decimal (`-0.33%`).
+  `parseNum` decides per string (a lone dot followed by exactly 3 digits = thousands).
+  On 2026-09-18 19:15 UTC the site switched from `1530,20` to `$1.530,20` and the old
+  `.replace(",", ".")` turned every price into ~1.53 — only `blue` survived, via the
+  argentinadatos cross-check. If quotes ever look like pocket change again, look here first.
+- `isPlausibleRate` rejects anything below 100 ARS/USD, so a repeat of that class of
+  breakage marks every code broken and falls back to argentinadatos instead of writing junk.
 
 ### ⚠️ Schema gotchas (read before writing any query)
 
