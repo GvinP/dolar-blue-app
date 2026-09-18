@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 
@@ -24,20 +23,17 @@ class WidgetProvider : AppWidgetProvider() {
         const val KEY_SLOT2_PCT = "slot2_pct"
         const val KEY_UPDATED_AT = "updated_at"
 
-        private const val COLOR_POSITIVE = "#00ff83" // mismo verde que en HomeScreen
-        private const val COLOR_NEGATIVE = "#af2030" // mismo rojo que en HomeScreen
-        private const val COLOR_NEUTRAL = "#808080"  // gris ya usado para texto secundario del widget
+        /** widget.ts manda esto cuando la cotización no tiene ese lado (p.ej. tarjeta). */
+        private const val EMPTY_VALUE = "–"
 
-        private fun pctColor(pct: String): Int {
-            val value = pct.trim().trimEnd('%').replace(',', '.').toDoubleOrNull()
-            return Color.parseColor(
-                when {
-                    value == null || value == 0.0 -> COLOR_NEUTRAL
-                    value > 0 -> COLOR_POSITIVE
-                    else -> COLOR_NEGATIVE
-                },
-            )
-        }
+        /** Igual que en las filas de HomeScreen: a 2 celdas de ancho "Dólar" no aporta. */
+        private val DOLAR_PREFIX = Regex("^Dólar\\s*", RegexOption.IGNORE_CASE)
+
+        private fun String?.orAbsent(): String? =
+            this?.trim()?.takeIf { it.isNotEmpty() && it != EMPTY_VALUE }
+
+        private fun shortTitle(title: String?): String =
+            title?.trim()?.replace(DOLAR_PREFIX, "").orEmpty()
 
         private fun formatUpdatedAt(updatedAt: Long): String {
             if (updatedAt <= 0L) return ""
@@ -81,12 +77,15 @@ class WidgetProvider : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.refresh_button, refresh)
 
         // Slot 1 (siempre visible)
-        views.setTextViewText(R.id.slot1_title, prefs.getString(KEY_SLOT1_TITLE, "") ?: "")
-        views.setTextViewText(R.id.slot1_compra, prefs.getString(KEY_SLOT1_BUY, "–") ?: "–")
-        views.setTextViewText(R.id.slot1_venta, prefs.getString(KEY_SLOT1_SELL, "–") ?: "–")
-        val slot1Pct = prefs.getString(KEY_SLOT1_PCT, "") ?: ""
-        views.setTextViewText(R.id.slot1_porcentaje, slot1Pct)
-        views.setTextColor(R.id.slot1_porcentaje, pctColor(slot1Pct))
+        views.setTextViewText(R.id.slot1_title, shortTitle(prefs.getString(KEY_SLOT1_TITLE, "")))
+        renderPrice(
+            views,
+            R.id.slot1_price,
+            R.id.slot1_tag,
+            buy = prefs.getString(KEY_SLOT1_BUY, null),
+            sell = prefs.getString(KEY_SLOT1_SELL, null),
+        )
+        renderPill(context, views, R.id.slot1_pct, prefs.getString(KEY_SLOT1_PCT, null))
 
         // Slot 2 (configurable desde Ajustes; oculto si el usuario no eligió un segundo curso)
         val slot2Visible = prefs.getBoolean(KEY_SLOT2_VISIBLE, true)
@@ -94,16 +93,73 @@ class WidgetProvider : AppWidgetProvider() {
         views.setViewVisibility(R.id.slot2_separator, slot2Visibility)
         views.setViewVisibility(R.id.slot2_block, slot2Visibility)
         if (slot2Visible) {
-            views.setTextViewText(R.id.slot2_title, prefs.getString(KEY_SLOT2_TITLE, "") ?: "")
-            views.setTextViewText(R.id.slot2_compra, prefs.getString(KEY_SLOT2_BUY, "–") ?: "–")
-            views.setTextViewText(R.id.slot2_venta, prefs.getString(KEY_SLOT2_SELL, "–") ?: "–")
-            val slot2Pct = prefs.getString(KEY_SLOT2_PCT, "") ?: ""
-            views.setTextViewText(R.id.slot2_porcentaje, slot2Pct)
-            views.setTextColor(R.id.slot2_porcentaje, pctColor(slot2Pct))
+            views.setTextViewText(R.id.slot2_title, shortTitle(prefs.getString(KEY_SLOT2_TITLE, "")))
+            renderPrice(
+                views,
+                R.id.slot2_price,
+                R.id.slot2_tag,
+                buy = prefs.getString(KEY_SLOT2_BUY, null),
+                sell = prefs.getString(KEY_SLOT2_SELL, null),
+            )
+            renderPill(context, views, R.id.slot2_pct, prefs.getString(KEY_SLOT2_PCT, null))
         }
 
         views.setTextViewText(R.id.updated_at, formatUpdatedAt(prefs.getLong(KEY_UPDATED_AT, 0L)))
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+
+    /**
+     * Mismo renglón que las filas de HomeScreen: manda la venta y la compra no se
+     * muestra — a 2 celdas de ancho no hay lugar, y es el lado que la gente mira.
+     * Cuando no hay venta (tarjeta) la compra ocupa ese lugar y debajo aparece el
+     * tag "compra", igual que `rowTag`, para que no se lea como precio de venta.
+     */
+    private fun renderPrice(
+        views: RemoteViews,
+        priceId: Int,
+        tagId: Int,
+        buy: String?,
+        sell: String?,
+    ) {
+        val venta = sell.orAbsent()
+        val compra = buy.orAbsent()
+        views.setTextViewText(priceId, venta ?: compra ?: EMPTY_VALUE)
+        val showTag = venta == null && compra != null
+        views.setViewVisibility(tagId, if (showTag) View.VISIBLE else View.GONE)
+        if (showTag) {
+            views.setTextViewText(tagId, "compra")
+        }
+    }
+
+    /**
+     * Como DeltaPill.tsx pero sin la flecha: a 2 celdas de ancho el ▲/▼ cuesta unos
+     * 10dp que hacen falta para que el nombre no se corte, y la dirección ya la dan
+     * el color y el signo — "-0.32%" en rojo, "0.80%" en verde (el 0% cuenta como
+     * suba, igual que en la app). Sin dato la pill no se dibuja.
+     */
+    private fun renderPill(
+        context: Context,
+        views: RemoteViews,
+        pillId: Int,
+        porcentaje: String?,
+    ) {
+        val pct = porcentaje.orAbsent()
+        if (pct == null) {
+            views.setViewVisibility(pillId, View.GONE)
+            return
+        }
+        val isDown = pct.startsWith("-")
+        views.setViewVisibility(pillId, View.VISIBLE)
+        views.setTextViewText(pillId, pct)
+        views.setTextColor(
+            pillId,
+            context.getColor(if (isDown) R.color.widget_down else R.color.widget_up),
+        )
+        views.setInt(
+            pillId,
+            "setBackgroundResource",
+            if (isDown) R.drawable.widget_pill_down else R.drawable.widget_pill_up,
+        )
     }
 }

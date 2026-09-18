@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Estado inerte de la pill: es el fondo declarado en el layout, o sea lo que se ve
+  en el preview del selector de widgets y antes del primer fetch. Con datos,
+  renderPill siempre la pisa por la variante up/down.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_surface_elevated" />
+    <corners android:radius="100dp" />
+</shape>
