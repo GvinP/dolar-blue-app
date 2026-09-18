@@ -167,7 +167,7 @@ The repo is a Node project, so the Deno Edge Function code triggers
 - M4 — push notifications ✅ (expo-notifications, push_tokens table, send-notifications Edge Function, pg_cron)
 - M5 — Android home screen widget ✅ (SharedPreferences fed from HomeScreen after Supabase
   fetch, no native scraping) — verified on-device. Widget shows 1-2 user-configurable quote
-  codes (`SettingsScreen`, default Blue + Oficial), % colored by sign (green/red/gray). Refresh
+  codes (`SettingsScreen`, default Blue + Oficial), delta as a green/red pill. Refresh
   button (⟳) runs a Headless JS task (`WidgetRefreshTaskService` → `index.js`
   `registerHeadlessTask('WidgetRefresh', ...)` → `src/widgetRefreshTask.ts`) that re-fetches and
   re-pushes to the widget with no Activity/UI — verified on-device. Tapping the rest of the
@@ -175,6 +175,23 @@ The repo is a Node project, so the Deno Edge Function code triggers
   `HomeScreen.tsx`) as a reliable fallback if the headless task ever gets killed by
   battery-optimization on some OEM. Widget also shows "Actualizado hace Xm/h" (timestamp
   written by `WidgetModule.updateWidget()` on every push, normal or headless).
+
+  ⚠️ `widget_layout.xml` may only use classes annotated `@RemoteView` — `FrameLayout`,
+  `LinearLayout`, `RelativeLayout`, `GridLayout`, `TextView`, `ImageView`, `Button`,
+  `ProgressBar`, `ViewStub`, and the adapter views. Plain `<View>` is **not** on that list:
+  using one (e.g. as a 1dp divider — use a `TextView` instead) compiles and passes CI, then
+  fails at runtime with the launcher showing "Can't load widget". Lint won't catch it either.
+
+  ⚠️ The widget can't read the JS bundle, so its design tokens are **duplicated** natively:
+  `assets/colors/colors.ts` → `res/values/widget_colors.xml`, and `assets/fonts/*.ttf` →
+  `res/font/*.ttf` (lowercase names, referenced via `android:fontFamily`). Changing the app
+  palette or fonts without mirroring them there silently leaves the widget on the old design.
+  Sizing lives in `res/xml/widget_info.xml` (2x1 cells); the card itself is `wrap_content`
+  inside a `match_parent` root, so it shrinks to its content instead of stretching to the cell.
+  Two sizing systems coexist there: Android 12+ reads `targetCellWidth`/`targetCellHeight`,
+  older launchers derive cells from `minWidth`/`minHeight` via `ceil((dp + 30) / 70)` — set
+  both or the widget comes out the wrong size on one of them. At 2x1 each quote is a single
+  row (name · venta · pill) mirroring `renderItem` in `HomeScreen`; `compra` is not shown.
 - M6 — configurable push notifications ✅ (per-device watched code + threshold %, `SettingsScreen`)
 - Cross-cutting: quality + UX tracks
 
