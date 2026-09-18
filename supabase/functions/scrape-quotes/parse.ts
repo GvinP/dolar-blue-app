@@ -78,6 +78,25 @@ export function isPlausiblePct(v: number | null): boolean {
   return Math.abs(v) <= 50;
 }
 
+// ─── Плитки с одной ценой ─────────────────────────────────────────────────────
+
+/**
+ * Плитка с единственной ценой (сейчас это tarjeta): решаем по подписи,
+ * compra это или venta.
+ *
+ * Узлы `.val` берутся позиционно, и парсер клал единственное значение в compra —
+ * хотя на dolarhoy у tarjeta подписано «Venta». Из-за этого приложение рисовало
+ * цену с ярлыком COMPRA, а send-notifications вовсе пропускал код: он отбирает
+ * строки по `sell IS NOT NULL`.
+ */
+export function pickSingleValueField(tileText: string): "compra" | "venta" {
+  const t = tileText.toLowerCase();
+  const hasVenta = t.includes("venta");
+  const hasCompra = t.includes("compra");
+  // Подписи нет или есть обе — оставляем прежнее поведение
+  return hasVenta && !hasCompra ? "venta" : "compra";
+}
+
 // ─── Маппинг заголовков ───────────────────────────────────────────────────────
 
 // Порядок важен: более специфичные правила должны идти раньше

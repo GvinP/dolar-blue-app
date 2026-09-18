@@ -5,7 +5,7 @@ import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import {LineChart, lineDataItem} from 'react-native-gifted-charts';
 import {RootStackParamList} from './types';
 import {calculateLabelIndexes, formatPercent, formatPrice} from './utils';
-import {fetchQuoteHistory, HistoryPrice} from './api/quotes';
+import {fetchQuoteHistory, HistoryPrice, historyValue} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
 import {colors} from '../assets/colors';
 import {FONT_FAMILY} from '../assets/fonts';
@@ -32,6 +32,15 @@ export const ChartScreen = () => {
     setFilteredPrices(prices.slice(-sliceCount));
   }, [selectedFilter, prices]);
 
+  // Días con precio, ya resueltos a un número (ver historyValue)
+  const points = useMemo(
+    () =>
+      filteredPrices
+        .map(item => ({fecha: item.fecha, value: historyValue(item)}))
+        .filter((item): item is {fecha: string; value: number} => item.value !== null),
+    [filteredPrices],
+  );
+
   const pointerLabelComponent = useCallback((items: lineDataItem[]) => {
     return <PointerLabel items={items[0]} />;
   }, []);
@@ -39,22 +48,22 @@ export const ChartScreen = () => {
   // Escala el eje Y al rango real del período (min–max) en lugar de arrancar
   // siempre en 0, que aplasta variaciones chicas contra el techo del gráfico.
   const {yAxisOffset, maxValue} = useMemo(() => {
-    if (filteredPrices.length === 0) {
+    if (points.length === 0) {
       return {yAxisOffset: undefined, maxValue: undefined};
     }
-    const values = filteredPrices.map(item => item.compra);
+    const values = points.map(item => item.value);
     const rawMin = Math.min(...values);
     const rawMax = Math.max(...values);
     const padding = (rawMax - rawMin) * 0.1 || rawMax * 0.02 || 1;
     const offset = Math.max(0, rawMin - padding);
     return {yAxisOffset: offset, maxValue: rawMax - offset + padding};
-  }, [filteredPrices]);
+  }, [points]);
 
   const stats = useMemo(() => {
-    if (filteredPrices.length === 0) {
+    if (points.length === 0) {
       return null;
     }
-    const values = filteredPrices.map(item => item.compra);
+    const values = points.map(item => item.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
@@ -62,15 +71,15 @@ export const ChartScreen = () => {
     const last = values[values.length - 1];
     const deltaPct = first === 0 ? 0 : ((last - first) / first) * 100;
     return {min, max, avg, last, deltaPct};
-  }, [filteredPrices]);
+  }, [points]);
 
   const data = useMemo<lineDataItem[]>(() => {
-    if (filteredPrices.length === 0) {
+    if (points.length === 0) {
       return [];
     }
-    const indexes = calculateLabelIndexes(filteredPrices.length);
-    return filteredPrices.map<lineDataItem>((item, index) => ({
-      value: item.compra,
+    const indexes = calculateLabelIndexes(points.length);
+    return points.map<lineDataItem>((item, index) => ({
+      value: item.value,
       label: indexes.includes(index)
         ? item.fecha.split('-').reverse().slice(0, 2).join('.')
         : undefined,
@@ -83,11 +92,11 @@ export const ChartScreen = () => {
             alignItems: 'center',
             justifyContent: 'center',
             width: 28,
-            marginLeft: filteredPrices.length === 7 ? -4 : 0,
+            marginLeft: points.length === 7 ? -4 : 0,
           }
         : undefined,
     }));
-  }, [filteredPrices]);
+  }, [points]);
 
   if (isLoading) {
     return (

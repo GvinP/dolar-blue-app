@@ -87,6 +87,15 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
   argentinadatos cross-check. If quotes ever look like pocket change again, look here first.
 - `isPlausibleRate` rejects anything below 100 ARS/USD, so a repeat of that class of
   breakage marks every code broken and falls back to argentinadatos instead of writing junk.
+- `.val` nodes are read positionally (first = compra, second = venta). A tile with a
+  **single** price is resolved by its label instead — `pickSingleValueField`. Without that,
+  tarjeta's Venta silently became a compra.
+- Three things move together if that ever changes: the scraper, the
+  `quotes_history_daily` view (`WHERE buy IS NOT NULL OR sell IS NOT NULL` — it must not
+  drop sell-only rows), and `historyValue` in `src/api/quotes.ts`, which the charts use to
+  pick `compra ?? venta` per day so tarjeta's series stays continuous across the switch.
+- The view lives only in Supabase — this repo has no `supabase/migrations/`, so schema
+  changes are applied through the dashboard/MCP and documented here.
 
 ### ⚠️ Schema gotchas (read before writing any query)
 
@@ -105,11 +114,9 @@ dolarhoy.com ──scrape──> Edge Function (scrape-quotes) ──upsert─�
 
 `blue`, `oficial`, `mep`, `ccl`, `tarjeta`, and crypto variants (`cripto` / `digital` / `usdc`).
 
-- `tarjeta` consistently returns `sell = null` — the site shows a single price for it.
-  Note that price is labelled **Venta** on dolarhoy but lands in `buy`, because `parseHtml`
-  takes `.val` nodes positionally. Not fixed yet: `quotes_history_daily` filters
-  `WHERE buy IS NOT NULL` and the charts plot `compra`, so moving it to `sell` would blank
-  the tarjeta chart — needs the view changed in the same step.
+- `tarjeta` has a single price on dolarhoy, labelled **Venta**, so it lands in `sell`
+  and `buy` stays null (the other codes are the other way round — see below).
+  Fixed 2026-09-18; rows captured before that have the value in `buy` instead.
 - `mayorista` is currently absent from dolarhoy; the scraper will pick it up
   automatically if it reappears.
 

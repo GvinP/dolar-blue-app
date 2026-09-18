@@ -5,6 +5,7 @@ import {
   isPlausiblePct,
   isPlausibleRate,
   parseNum,
+  pickSingleValueField,
 } from "./parse.ts";
 
 Deno.test("parseNum: новый формат dolarhoy (es-AR, точка = тысячи)", () => {
@@ -71,4 +72,14 @@ Deno.test("inferCode: заголовки плиток dolarhoy", () => {
   assertEquals(inferCode("DÓLAR TARJETA")?.code, "tarjeta");
   assertEquals(inferCode("Dólar Mayorista")?.code, "mayorista");
   assertEquals(inferCode("Won"), null);
+});
+
+Deno.test("pickSingleValueField: плитка с одной ценой", () => {
+  // tarjeta: на сайте единственная цена подписана «Venta»
+  assertEquals(pickSingleValueField("DÓLAR TARJETA Venta $1.995,50"), "venta");
+  assertEquals(pickSingleValueField("DÓLAR TARJETA VENTA $1.995,50"), "venta");
+  // Обе подписи или ни одной — прежнее поведение
+  assertEquals(pickSingleValueField("DÓLAR BLUE Compra $1.530 Venta $1.550"), "compra");
+  assertEquals(pickSingleValueField("DÓLAR OFICIAL Compra $1.485"), "compra");
+  assertEquals(pickSingleValueField("DÓLAR MAYORISTA $1.485"), "compra");
 });

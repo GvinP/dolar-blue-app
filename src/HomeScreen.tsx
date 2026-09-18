@@ -12,7 +12,7 @@ import {useCallback, useEffect, useLayoutEffect} from 'react';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {RootStackParamList, Cotizacion} from './types';
 import {StackNavigationProp} from '@react-navigation/stack';
-import {fetchLatestQuotes, fetchQuoteHistory} from './api/quotes';
+import {fetchLatestQuotes, fetchQuoteHistory, historyValue} from './api/quotes';
 import {useQuery} from '@tanstack/react-query';
 import {pushWidgetUpdate} from './widget';
 import {Sparkline, DeltaPill} from './components';
@@ -60,7 +60,10 @@ export const HomeScreen = () => {
     enabled: !!hero,
     staleTime: 5 * 60 * 1000,
   });
-  const sparkData = heroHistory?.slice(-8).map(h => h.compra);
+  const sparkData = heroHistory
+    ?.slice(-8)
+    .map(historyValue)
+    .filter((value): value is number => value !== null);
 
   const updateWidget = useCallback(async () => {
     await pushWidgetUpdate(prices);

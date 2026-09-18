@@ -5,6 +5,7 @@ import {
   isPlausiblePct,
   isPlausibleRate,
   parseNum,
+  pickSingleValueField,
   TITLE_MAP,
 } from "./parse.ts";
 
@@ -74,8 +75,16 @@ function parseHtml(html: string): RawQuote[] {
 
     // Аналог: findAll(el => el.attribs.class === 'val', tile)
     const valNodes = tile.querySelectorAll(".val");
-    const compra    = valNodes[0]?.textContent?.trim();
-    const venta     = valNodes[1]?.textContent?.trim();
+    let compra = valNodes[0]?.textContent?.trim();
+    let venta  = valNodes[1]?.textContent?.trim();
+
+    // У плитки с одной ценой поле определяет подпись, а не позиция — см.
+    // pickSingleValueField (иначе venta у tarjeta уезжает в compra).
+    if (valNodes.length === 1 &&
+        pickSingleValueField(tile.textContent ?? "") === "venta") {
+      venta = compra;
+      compra = undefined;
+    }
     // .var-porcentaje иногда содержит SVG-стрелку (chevron) с инлайновым <style>,
     // чей CSS-текст (".is-7 ... .st12{fill:#005c35}") склеивается с textContent.
     // Поэтому вытаскиваем число регэкспом по innerHTML, а не берём textContent целиком.
